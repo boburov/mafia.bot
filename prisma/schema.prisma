@@ -1,0 +1,34 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id          Int         @id @default(autoincrement())
+  name        String?
+  username    String      @unique
+  email       String      @unique
+  password    String
+  is_verified Boolean     @default(false)
+  role        Role        @default(USER)
+  createdAt   DateTime    @default(now())
+  subscrition Subscrition @default(FREE)
+}
+
+model Animes {
+  id    String @id @default(uuid())
+  title String
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum Subscrition {
+  FREE
+  PREMIUM
+}
