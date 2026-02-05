@@ -1,26 +1,37 @@
 {
   "name": "mafia.bot",
   "version": "1.0.0",
-  "description": "",
+  "description": "Telegram Mafia game bot built with Telegraf",
   "main": "index.js",
+  "type": "commonjs",
   "scripts": {
-    "dev": "nodemon index.js"
+    "dev": "nodemon",
+    "start": "node index.js"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/boburov/mafia.bot.git"
   },
-  "keywords": [],
-  "author": "",
+  "keywords": [
+    "telegram",
+    "bot",
+    "mafia",
+    "telegraf",
+    "game"
+  ],
+  "author": "Boburov",
   "license": "ISC",
-  "type": "commonjs",
   "bugs": {
     "url": "https://github.com/boburov/mafia.bot/issues"
   },
   "homepage": "https://github.com/boburov/mafia.bot#readme",
   "dependencies": {
     "dotenv": "^17.2.3",
+    "telegraf": "^4.16.3",
+    "uuid": "^13.0.0"
+  },
+  "devDependencies": {
     "nodemon": "^3.1.11",
-    "telegraf": "^4.16.3"
+    "@types/uuid": "^10.0.0"
   }
 }
