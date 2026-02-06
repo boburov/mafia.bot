@@ -7,7 +7,7 @@ bot.command("start", (ctx) => ctx.reply("Welcome!"));
 
 async function main() {
   await bot.launch();
-  console.log("Bot started");
+  console.log("Bot Ishga Tushdi");
 }
 
 main();
