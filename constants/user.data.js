@@ -1,3 +1,5 @@
+const { prisma } = require("../config/db");
+
 async function ensureUser(userId) {
     return prisma.user.upsert({
         where: { user_id: userId },

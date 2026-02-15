@@ -4,6 +4,7 @@ require("dotenv").config();
 const bot_runner = require("./bot");
 const { connectDB, prisma } = require("./config/db");
 const t = require("./middleware/language.changer");
+const botMiddlewar = require("./middleware/getLanguage");
 
 const bot = new Telegraf(process.env.BOT_TOKEN);
 
@@ -49,8 +50,9 @@ bot.on("text", async (ctx) => {
   }
 });
 
-// ---------- Your other bot logic ----------
-bot_runner(bot); // IMPORTANT: do not pass mutable lang here
+// ---------- other bot logic ----------
+botMiddlewar(bot)
+bot_runner(bot);
 
 // ---------- Boot ----------
 (async () => {
