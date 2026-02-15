@@ -1,5 +1,24 @@
 {
-    "welcome": "Xush kelibsiz!",
-    "choose_option": "Variantni tanlang",
-    "balance": "Sizning balansingiz: {amount} so'm"
+  "welcome": "🕵️‍♂️ Mafia o'yiniga xush kelibsiz!",
+  "choose_option": "Quyidagi variantlardan birini tanlang:",
+  "menu": "📋 Asosiy menyu",
+  "profile": "👤 Profil",
+  "choose_lang": "🌍 O'zingizga Qulay Tilni Tanlang",
+  "balance": "💰 Balansingiz: {amount} so'm",
+  "shop": "🛒 Do'kon",
+  "games": "🎮 O'yinlar",
+  "create_game": "➕ O'yin yaratish",
+  "join_game": "🚪 O'yinga qo'shilish",
+  "game_started": "🔥 O'yin boshlandi!",
+  "game_not_found": "❌ O'yin topilmadi",
+  "already_in_game": "⚠️ Siz allaqachon o'yindasiz",
+  "not_enough_money": "❌ Mablag' yetarli emas",
+  "item_bought": "✅ Xarid muvaffaqiyatli amalga oshdi",
+  "shop_info": "🛍 Do'kondan rol skinlari va maxsus imkoniyatlar sotib olishingiz mumkin",
+  "daily_bonus": "🎁 Kunlik bonus: {amount} so'm",
+  "help": "ℹ️ Yordam",
+  "help_text": "Mafia — bu strategik rolli o'yin. Har kecha qaror qabul qilinadi, har kun kimdir sud qilinadi.",
+  "lang_changed": "🌍 Til muvaffaqiyatli o'zgartirildi",
+  "error": "❌ Xatolik yuz berdi",
+  "back": "⬅️ Orqaga"
 }

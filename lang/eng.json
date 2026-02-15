@@ -1,5 +1,25 @@
 {
-    "welcome": "Xush kelibsiz!",
-    "choose_option": "Variantni tanlang",
-    "balance": "Sizning balansingiz: {amount} so'm"
+    "welcome": "🕵️‍♂️ Welcome to the Mafia game!",
+    "choose_option": "Please choose one of the options below:",
+    "choose_lang": "🌍 Please select Language",
+    "change_lang": "🌍 Change Language",
+    "menu": "📋 Main Menu",
+    "profile": "👤 Profile",
+    "balance": "💰 Your balance: {amount} so'm",
+    "shop": "🛒 Shop",
+    "games": "🎮 Games",
+    "create_game": "➕ Create Game",
+    "join_game": "🚪 Join Game",
+    "game_started": "🔥 The game has started!",
+    "game_not_found": "❌ Game not found",
+    "already_in_game": "⚠️ You are already in a game",
+    "not_enough_money": "❌ Not enough balance",
+    "item_bought": "✅ Purchase completed successfully",
+    "shop_info": "🛍 You can buy role skins and special abilities in the shop",
+    "daily_bonus": "🎁 Daily bonus: {amount} so'm",
+    "help": "ℹ️ Help",
+    "help_text": "Mafia is a strategic role-playing game. Every night decisions are made, and every day someone is put on trial.",
+    "lang_changed": "🌍 Language changed successfully",
+    "error": "❌ An error occurred",
+    "back": "⬅️ Back"
 }

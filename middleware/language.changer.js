@@ -5,8 +5,8 @@ const translations = {
 };
 
 function t(userLang, key, params = {}) {
-    const dict = translations[userLang] || translations.en; // fallback lang
-    let text = dict[key] ?? translations.en[key] ?? key;    // fallback key
+    const dict = translations[userLang] || translations.en;
+    let text = dict[key] ?? translations.en[key] ?? key;
 
     for (const p of Object.keys(params)) {
         text = text.replaceAll(`{${p}}`, String(params[p]));
