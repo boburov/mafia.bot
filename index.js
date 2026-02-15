@@ -39,17 +39,6 @@ async function setupCommands() {
   ]);
 }
 
-// Optional: reply to any text (but don’t spam welcome each time)
-bot.on("text", async (ctx) => {
-  try {
-    const lang = await getUserLang(ctx);
-    // Example: just show keyboard (or remove this if you don't want it)
-    return ctx.reply(t(lang, "welcome"), buildMainKeyboard(lang));
-  } catch (err) {
-    console.error("TEXT_ERROR:", err);
-  }
-});
-
 // ---------- other bot logic ----------
 botMiddlewar(bot)
 bot_runner(bot);
