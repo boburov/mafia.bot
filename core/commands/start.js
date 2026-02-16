@@ -21,7 +21,7 @@ function start(bot) {
         // ✅ take language from ctx (set by middleware)
         const lang = (ctx.state?.lang || "eng").trim();
 
-        return ctx.reply(t(lang, "welcome"), buildMainKeyboard(lang));
+        ctx.reply(t(lang, "welcome"), buildMainKeyboard(lang));
     });
 }
 
