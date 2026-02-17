@@ -2,51 +2,35 @@ const { Telegraf, Markup } = require("telegraf");
 require("dotenv").config();
 
 const bot_runner = require("./bot");
-const { connectDB, prisma } = require("./config/db");
-const t = require("./middleware/language.changer");
+const { connectDB } = require("./config/db");
 const botMiddlewar = require("./middleware/getLanguage");
+const start = require("./core/commands/start");
+const { startWorkers } = require("./queue/workers");
 
 const bot = new Telegraf(process.env.BOT_TOKEN);
-
-// ---------- Helpers ----------
-const getUserId = (ctx) => String(ctx?.from?.id ?? "");
-const normalizeLang = (lang) => (lang && lang.trim() ? lang : "eng");
-
-const buildMainKeyboard = (lang) =>
-  Markup.inlineKeyboard([
-    [
-      Markup.button.callback(t(lang, "shop"), "shop"),
-      Markup.button.callback(t(lang, "profile"), "profile"),
-    ],
-    [Markup.button.callback(t(lang, "change_lang"), "change_lang")],
-  ]);
-
-
-async function getUserLang(ctx) {
-  const userId = getUserId(ctx);
-  if (!userId) return "eng";
-
-  const user = await prisma.user.findUnique({ where: { user_id: userId } });
-  return normalizeLang(user?.lang);
-}
 
 // ---------- Commands ----------
 async function setupCommands() {
   await bot.telegram.setMyCommands([
-    { command: "start", description: "Botni qayta ishga tushurish" },
-    { command: "lang", description: "Tilni o'zgartirish" },
-    { command: "help", description: "Botdan foydalanish" },
+    { command: "start", description: "Start Bot" },
+    { command: "lang", description: "Change Language" },
+    { command: "create", description: "Create Game" },
+    { command: "profile", description: "Profile" },
   ]);
 }
 
-// ---------- other bot logic ----------
-botMiddlewar(bot)
-bot_runner(bot);
-
+bot.action("enter_chat", async (ctx) => {
+  await ctx.answerCbQuery();
+  await ctx.reply("Send /groups or create a game here 🙂");
+});
 // ---------- Boot ----------
 (async () => {
+  await botMiddlewar(bot)
+  await bot_runner(bot);
   await connectDB();
   await setupCommands();
+  await start(bot)
+  await startWorkers(bot)
   await bot.launch();
   console.log("Bot running...");
 })();

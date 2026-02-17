@@ -9,6 +9,7 @@
   "games": "🎮 Игры",
   "create_game": "➕ Создать игру",
   "join_game": "🚪 Присоединиться к игре",
+  "game_will_start":"",
   "game_started": "🔥 Игра началась!",
   "game_not_found": "❌ Игра не найдена",
   "already_in_game": "⚠️ Вы уже участвуете в игре",

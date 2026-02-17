@@ -1,28 +1,27 @@
-import { Worker } from "bullmq";
-import { connection } from "./redis";
+const { Worker } = require("bullmq");
+const { connection } = require("./redis");
 
-export function startWorkers(bot) {
-    new Worker(
-        "game",
-        async (job) => {
-            const { roomId, phase } = job.data;
+function startWorkers(bot) {
+  console.log("✅ startWorkers called");
 
-            // Minimal demo:
-            await bot.telegram.sendMessage(job.data.chatId, `⏳ Phase ended: ${phase} (room ${roomId})`);
+  new Worker(
+    "game",
+    async (job) => {
+      switch (job.name) {
+        case "phase-timeout ":
+          return "salom"
+        case "collect-users":
+          return "salom"
+        case "vote-timeout":
+          return "salom"
 
-            // Keyingi fazani boshlash logikang shu yerda bo‘ladi:
-            // if (phase === "NIGHT") await startDay(roomId)
-        },
-        { connection }
-    );
+      }
 
-    // Reminders
-    new Worker(
-        "reminders",
-        async (job) => {
-            const { chatId, text } = job.data;
-            await bot.telegram.sendMessage(chatId, `⏰ Reminder: ${text}`);
-        },
-        { connection }
-    );
+    },
+    { connection }
+  );
+
+  console.log("✅ Worker created (queue: game)");
 }
+
+module.exports = { startWorkers };

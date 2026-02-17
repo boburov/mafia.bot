@@ -12,6 +12,8 @@ model User {
   user_id        String           @unique
   money          Int              @default(0)
   ruby           Int              @default(0)
+  defense        Int              @default(0)
+  documents      Int              @default(0)
   lang           Lang             @default(eng)
   user_equipment User_equipment[]
 }
@@ -20,7 +22,27 @@ model User_equipment {
   id     String  @id @default(uuid())
   name   String
   userId String?
-  user   User?   @relation(fields: [userId], references: [id])
+  user   User?   @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Game {
+  id    String      @id @default(uuid())
+  phase Phase       @default(DAY)
+  users Game_User[]
+}
+
+model Game_User {
+  id      String  @id @default(uuid())
+  user_id String  @unique
+  role    String
+  game    Game?   @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  gameId  String?
+}
+
+enum Phase {
+  DAY
+  NIGHT
+  VOTING
 }
 
 enum Lang {

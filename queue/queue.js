@@ -1,5 +1,6 @@
-import { Queue } from "bullmq";
-import { connection } from "./redis";
+const { Queue } = require("bullmq");
+const { connection } = require("./redis");
 
-export const gameQueue = new Queue("game", { connection });
-export const reminderQueue = new Queue("reminders", { connection });
+const gameQueue = new Queue("game", { connection });
+
+module.exports = { gameQueue };
