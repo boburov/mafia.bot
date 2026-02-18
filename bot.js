@@ -1,3 +1,4 @@
+const all_roles = require("./core/commands/all_roles");
 const change_lang = require("./core/commands/change.lang");
 const help = require("./core/commands/help");
 const start = require("./core/commands/start");
@@ -20,6 +21,9 @@ function bot_runner(bot) {
 
     // user profile
     profileCommand(bot)
+
+    // all roles 
+    all_roles(bot)
 }
 
 module.exports = bot_runner
