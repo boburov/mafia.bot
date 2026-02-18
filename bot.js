@@ -1,29 +1,35 @@
+// bot.js — registers all command and callback handlers
+"use strict";
+
 const all_roles = require("./core/commands/all_roles");
 const change_lang = require("./core/commands/change.lang");
 const help = require("./core/commands/help");
 const start = require("./core/commands/start");
-const create_game = require("./core/main/main")
-const profileCommand = require("./core/main/profile")
+const create_game = require("./core/main/main");
+const profileCommand = require("./core/main/profile");
+const { registerGameHandlers } = require("./core/game/handlers");
 
 function bot_runner(bot) {
+  // /start — registration + main menu
+  start(bot);
 
-    // command start 
-    start(bot)
+  // /lang — language selection
+  change_lang(bot);
 
-    // language
-    change_lang(bot)
+  // /help
+  help(bot);
 
-    // help
-    help(bot)
+  // /create, join_game callback
+  create_game(bot);
 
-    // create game
-    create_game(bot)
+  // /profile
+  profileCommand(bot);
 
-    // user profile
-    profileCommand(bot)
+  // all_roles info
+  all_roles(bot);
 
-    // all roles 
-    all_roles(bot)
+  // Game engine: night actions, voting, /leave, start_now
+  registerGameHandlers(bot);
 }
 
-module.exports = bot_runner
+module.exports = bot_runner;
