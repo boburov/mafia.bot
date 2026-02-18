@@ -16,6 +16,8 @@
   "game_not_found": "❌ O'yin topilmadi",
   "already_in_game": "⚠️ Siz allaqachon o'yindasiz",
   "not_enough_money": "❌ Mablag' yetarli emas",
+  "enter_the_chat": "🎲 Chatga Qoshilish",
+  "add_to_chanel": "👥 O'yini guruhga qoshish",
   "item_bought": "✅ Xarid muvaffaqiyatli amalga oshdi",
   "shop_info": "🛍 Do'kondan rol skinlari va maxsus imkoniyatlar sotib olishingiz mumkin",
   "daily_bonus": "🎁 Kunlik bonus: {amount} so'm",

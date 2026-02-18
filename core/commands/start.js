@@ -4,16 +4,16 @@ const t = require("../../middleware/language.changer");
 
 const buildMainKeyboard = (lang) =>
   Markup.inlineKeyboard([
+    [Markup.button.url(
+      t(lang, "add_to_chanel"),
+      `https://t.me/AuthenticMafiaBot?startgroup=mafia`
+    ),],
+    [Markup.button.callback(t(lang, "change_lang"), "change_lang")],
+    [Markup.button.callback(t(lang, "enter_the_chat"), "enter_chat")],
     [
       Markup.button.callback(t(lang, "shop"), "shop"),
       Markup.button.callback(t(lang, "profile"), "profile"),
     ],
-    [Markup.button.url(
-      "👥 Add the game to your chat",
-      `https://t.me/AuthenticMafiaBot?startgroup=mafia`
-    ),],
-    [Markup.button.callback(t(lang, "change_lang"), "change_lang")],
-    [Markup.button.callback("🎲 Enter the chat", "enter_chat")],
   ]);
 
 function start(bot) {
