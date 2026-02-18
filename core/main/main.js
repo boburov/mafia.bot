@@ -38,7 +38,6 @@ module.exports = function create_game(bot) {
                     create: { chat_id: chatId, status: "LOBBY", phase: "DAY" }
                 });
             } else {
-                // game already exists and active
                 return ctx.reply("⚠️ A game is already created in this group. Players can join now.");
             }
 
