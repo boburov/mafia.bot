@@ -35,7 +35,7 @@ model Game {
 
 model GamePlayer {
   id     String @id @default(uuid())
-  userId String @unique
+  userId String @unique 
   gameId String
   role   String?
   game   Game   @relation(fields: [gameId], references: [id], onDelete: Cascade)

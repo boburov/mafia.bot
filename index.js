@@ -35,9 +35,12 @@ bot.action("enter_chat", async (ctx) => {
 // ---------- Boot ----------
 async function boot() {
   try {
+    const players = await prisma.gamePlayer.findMany({})
+    const game = await prisma.game.findUnique({ where: { id: players[0].gameId }, include: { players: true } })
+    console.log(game.players);
+
     await botMiddlewar(bot);
     await bot_runner(bot);
-
     await connectDB();
     await setupCommands();
     await start(bot);

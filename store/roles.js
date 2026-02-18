@@ -56,7 +56,7 @@ const ROLES = Object.freeze({
         },
         hierarchy: {
             commandRoleKeys: ["MAFIA", "SPY", "JOURNALIST", "LAWYER", "BINDER"],
-            succession: ["MAFIA"],
+            succession: ["MAFIA"],  
         },
     },
 
@@ -75,7 +75,7 @@ const ROLES = Object.freeze({
         defaults: { isAlive: true },
         abilities: {
             canKillAtNight: true,
-            actions: [], // keep empty if only Don chooses
+            actions: [],
         },
     },
 
@@ -636,10 +636,6 @@ function roleText(roleKey, lang = "eng") {
     if (!role) return "Unknown role";
     const l = (lang === "uz" || lang === "ru" || lang === "eng") ? lang : "eng";
     return `Siz - ${role.emoji} ${role.i18n.name[l]}!\n\n${role.i18n.description[l]}`;
-}
-
-function allRoles(){
-    
 }
 
 module.exports = { ROLES, TEAMS, ACTIONS, LANGS, roleText };
