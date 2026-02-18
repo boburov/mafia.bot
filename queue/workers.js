@@ -7,16 +7,20 @@ function startWorkers(bot) {
   new Worker(
     "game",
     async (job) => {
+      console.log("✅ Job received:", job.name, job.data);
+
       switch (job.name) {
-        case "phase-timeout ":
-          return "salom"
-        case "collect-users":
-          return "salom"
-        case "vote-timeout":
-          return "salom"
+        case "phase-timeout": {
+          const { chatId } = job.data;
 
+          await bot.telegram.sendMessage(chatId, "⏰ 60 seconds passed! Starting the game...");
+          return;
+        }
+
+        default:
+          console.log("⚠️ Unknown job:", job.name);
+          return;
       }
-
     },
     { connection }
   );

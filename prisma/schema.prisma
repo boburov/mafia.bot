@@ -26,17 +26,27 @@ model User_equipment {
 }
 
 model Game {
-  id    String      @id @default(uuid())
-  phase Phase       @default(DAY)
-  users Game_User[]
+  id      String       @id @default(uuid())
+  phase   Phase        @default(DAY)
+  status  Status       @default(LOBBY)
+  chat_id String       @unique
+  players GamePlayer[]
 }
 
-model Game_User {
-  id      String  @id @default(uuid())
-  user_id String  @unique
-  role    String
-  game    Game?   @relation(fields: [gameId], references: [id], onDelete: Cascade)
-  gameId  String?
+model GamePlayer {
+  id     String @id @default(uuid())
+  userId String @unique
+  gameId String
+  role   String?
+  game   Game   @relation(fields: [gameId], references: [id], onDelete: Cascade)
+
+  @@unique([gameId, userId])
+}
+
+enum Status {
+  FINISHED
+  RUNNING
+  LOBBY
 }
 
 enum Phase {

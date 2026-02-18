@@ -1,12 +1,10 @@
-const telegraf = require("telegraf");
-const Telegraf = telegraf.Telegraf || telegraf.default?.Telegraf || telegraf.default || telegraf;
-const Markup = telegraf.Markup || telegraf.default?.Markup;
-
 require("dotenv").config();
+const { Telegraf } = require("telegraf");
+
 const bot = new Telegraf(process.env.BOT_TOKEN);
 
 const bot_runner = require("./bot");
-const { connectDB } = require("./config/db");
+const { connectDB, prisma } = require("./config/db");
 const botMiddlewar = require("./middleware/getLanguage");
 const start = require("./core/commands/start");
 const { startWorkers } = require("./queue/workers");
@@ -21,33 +19,42 @@ async function setupCommands() {
   ]);
 }
 
+// Callback: enter_chat
 bot.action("enter_chat", async (ctx) => {
-  // 1) darhol spinner o‘chadi
-  await ctx.answerCbQuery();
+  try {
+    // spinner o‘chirish (har doim birinchi)
+    await ctx.answerCbQuery();
 
-  // 2) keyin boshqa ishlar
-  await ctx.reply("Send /create in group chat 🙂");
+    // keyin reply
+    await ctx.reply("Send /create in group chat 🙂");
+  } catch (e) {
+    console.error("enter_chat error:", e);
+  }
 });
-
-
-console.log("typeof bot.on:", typeof bot.on);
-console.log("bot is Telegraf?", bot instanceof Telegraf);
-
-
-bot.on("text", async (ctx) => {
-  await ctx.reply(String(ctx.chat.id));
-})
 
 // ---------- Boot ----------
 async function boot() {
-  await botMiddlewar(bot);
-  await bot_runner(bot);
-  await connectDB();
-  await setupCommands();
-  await start(bot);
-  await startWorkers(bot);
-  await bot.launch();
-  console.log("Bot running...");
+  try {
+    await botMiddlewar(bot);
+    await bot_runner(bot);
+
+    await connectDB();
+    await setupCommands();
+    await start(bot);
+    await startWorkers(bot);
+
+    // ✅ MUHIM: bot qayta yoqilganda eski update’larni tashlab yuboradi
+    await bot.launch({ dropPendingUpdates: true });
+
+    console.log("Bot running...");
+  } catch (e) {
+    console.error("Boot error:", e);
+    process.exit(1);
+  }
 }
+
 boot();
 
+// Graceful stop (nodemon/pm2 uchun foydali)
+process.once("SIGINT", () => bot.stop("SIGINT"));
+process.once("SIGTERM", () => bot.stop("SIGTERM"));
