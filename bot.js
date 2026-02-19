@@ -7,7 +7,6 @@ const help = require("./core/commands/help");
 const start = require("./core/commands/start");
 const create_game = require("./core/main/main");
 const profileCommand = require("./core/main/profile");
-const { registerGameHandlers } = require("./core/game/handlers");
 
 function bot_runner(bot) {
   // /start — registration + main menu
@@ -28,8 +27,6 @@ function bot_runner(bot) {
   // all_roles info
   all_roles(bot);
 
-  // Game engine: night actions, voting, /leave, start_now
-  registerGameHandlers(bot);
 }
 
 module.exports = bot_runner;
