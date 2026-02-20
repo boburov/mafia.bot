@@ -1,20 +1,39 @@
-// core/main/main.js
-// /create command, join_game callback, and /leave (delegated to handlers.js).
-"use strict";
-
 const { Markup } = require("telegraf");
 const { prisma } = require("../../config/db");
 const t = require("../../middleware/language.changer");
 const { scheduleJob } = require("../../queue/queue");
 
 module.exports = function create_game(bot) {
-  // ── /create ──────────────────────────────────────────────────────────────
-  bot.command("create", async (ctx) => {
 
+  bot.command("create", async (ctx) => {
+    try {
+      const chatId = await String(ctx.chat.id)
+
+      if (!chatId.startsWith("-100")) {
+        ctx.reply("Ushbu Buyruq Faqat Kanalda Yoki Guruhda Ishlaydi")
+      } else {
+        const game = await prisma.game.findUnique({ where: { chat_id: chatId } })
+
+        if (game) {
+          if (game.status === "RUNNING") {
+            return ctx.reply("bu guruhda oyin allaqachon boshlangan")
+          } else if (game.status === "LOBBY") {
+            return ctx.reply("Qoshil", Markup.inlineKeyboard([
+              Markup.button.callback("➕ Qoshilish", `join_game_${ctx.from.id}`)
+            ]))
+          }
+        } else {
+          return ctx.reply("O'yin Hoz Yaratamiz")
+        }
+      }
+    } catch (error) {
+      ctx.reply("Xatolik Yuz Berdi");
+      console.log(error);
+
+    }
   });
 
-  // ── join_game callback ────────────────────────────────────────────────────
   bot.action(/^join_game:(.+)$/, async (ctx) => {
-
+    ctx.reply("oioi")
   });
 };

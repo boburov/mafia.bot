@@ -1,6 +1,4 @@
-// bot.js — registers all command and callback handlers
-"use strict";
-
+const { initGameWorker } = require("./queue/game.worker");
 const all_roles = require("./core/commands/all_roles");
 const change_lang = require("./core/commands/change.lang");
 const help = require("./core/commands/help");
@@ -23,6 +21,9 @@ function bot_runner(bot) {
 
   // /profile
   profileCommand(bot);
+
+  // game createing section
+  initGameWorker(bot)
 
   // all_roles info
   all_roles(bot);

@@ -1,6 +1,5 @@
-const rolesKeyboard2Cols = require("../../store/role.slice")
 const t = require("../../middleware/language.changer");
-const { ROLES } = require("../../store/roles");
+const { ROLES } = require("../../constants/roles");
 
 module.exports = function all_roles(bot) {
     bot.action("all_roles", async ctx => {
