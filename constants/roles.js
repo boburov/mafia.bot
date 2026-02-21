@@ -36,7 +36,6 @@ const ACTIONS = Object.freeze({
 const LANGS = Object.freeze({ uz: "uz", eng: "eng", ru: "ru" });
 
 const ROLES = Object.freeze({
-    // --- Core Mafia ---
     DON: {
         key: "DON",
         emoji: "🤵🏻",
