@@ -7,7 +7,6 @@ const bot_runner = require("./bot");
 const { connectDB, prisma } = require("./config/db");
 const botMiddlewar = require("./middleware/getLanguage");
 const start = require("./core/commands/start");
-const { startWorkers } = require("./queue/workers");
 
 // ---------- Commands ----------
 async function setupCommands() {
@@ -40,12 +39,12 @@ async function boot() {
     await connectDB();
     await setupCommands();
     await start(bot);
-    await startWorkers(bot);
 
     // ✅ MUHIM: bot qayta yoqilganda eski update’larni tashlab yuboradi
-    await bot.launch({ dropPendingUpdates: true });
+    await bot.launch({ dropPendingUpdates: true }, () => {
+      console.log("🎯 Bot running...");
+    });
 
-    console.log("Bot running...");
   } catch (e) {
     console.error("Boot error:", e);
     process.exit(1);

@@ -19,7 +19,7 @@ module.exports = function create_game(bot) {
             return ctx.reply("bu guruhda oyin allaqachon boshlangan")
           } else if (game.status === "LOBBY") {
             return ctx.reply("Qoshil", Markup.inlineKeyboard([
-              Markup.button.callback("➕ Qoshilish", `join_game_${ctx.from.id}`)
+              Markup.button.callback("➕ Qoshilish", `join_game:${ctx.from.id}`)
             ]))
           }
         } else {
@@ -34,6 +34,9 @@ module.exports = function create_game(bot) {
   });
 
   bot.action(/^join_game:(.+)$/, async (ctx) => {
+    const user_id = ctx.match[1]
+    console.log(user_id);
+
     ctx.reply("oioi")
   });
 };
