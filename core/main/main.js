@@ -36,10 +36,25 @@ module.exports = function create_game(bot) {
         ...lobbyKeyboard(chatId),
       });
 
+      try {
+        await ctx.telegram.pinChatMessage(ctx.chat.id, msg.message_id, {
+          disable_notification: true,
+        });
+      } catch (e) {
+        console.log("Botda Admindagi Hamma Huquq Yo'q:", e?.response?.description || e.message);
+      }
+
       await gameQueue.add(
         "START_GAME",
         { gameId: game.id, chatId: game.chat_id },
-        { delay: 60000, jobId: `START_GAME-${game.id}` }
+        {
+          delay: 60_000,
+          jobId: `START_GAME-${game.id}`,
+          removeOnComplete: true,
+          removeOnFail: 100,
+          attempts: 3,
+          backoff: { type: "exponential", delay: 2000 },
+        }
       );
 
       await prisma.game.update({
@@ -90,12 +105,9 @@ module.exports = function create_game(bot) {
         await ctx.telegram.editMessageText(
           chatId,
           game.lobby_msg,
-          ctx.from.id,
+          undefined,                 // ✅ must be undefined
           renderLobby(game, players),
-          {
-            parse_mode: "HTML",
-            ...lobbyKeyboard(chatId),
-          }
+          { parse_mode: "HTML", ...lobbyKeyboard(chatId) }
         );
       }
     } catch (err) {
