@@ -1,12 +1,12 @@
 require("dotenv").config();
 const { Telegraf } = require("telegraf");
-
 const bot = new Telegraf(process.env.BOT_TOKEN);
 
 const bot_runner = require("./bot");
 const { connectDB, prisma } = require("./config/db");
 const botMiddlewar = require("./middleware/getLanguage");
 const start = require("./core/commands/start");
+const { generateRolesForPlayers, RULES } = require("./constants/role.generator");
 
 // ---------- Commands ----------
 async function setupCommands() {

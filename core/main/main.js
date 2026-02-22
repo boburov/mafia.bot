@@ -1,42 +1,106 @@
-const { Markup } = require("telegraf");
 const { prisma } = require("../../config/db");
 const t = require("../../middleware/language.changer");
-const { scheduleJob } = require("../../queue/queue");
+const { scheduleJob, gameQueue } = require("../../queue/queue");
+const { renderLobby, lobbyKeyboard } = require("../../lib/lobby.render")
 
 module.exports = function create_game(bot) {
 
   bot.command("create", async (ctx) => {
     try {
-      const chatId = await String(ctx.chat.id)
+      const chatId = String(ctx.chat.id);
 
       if (!chatId.startsWith("-100")) {
-        ctx.reply("Ushbu Buyruq Faqat Kanalda Yoki Guruhda Ishlaydi")
-      } else {
-        const game = await prisma.game.findUnique({ where: { chat_id: chatId } })
-
-        if (game) {
-          if (game.status === "RUNNING") {
-            return ctx.reply("bu guruhda oyin allaqachon boshlangan")
-          } else if (game.status === "LOBBY") {
-            return ctx.reply("Qoshil", Markup.inlineKeyboard([
-              Markup.button.callback("➕ Qoshilish", `join_game:${ctx.from.id}`)
-            ]))
-          }
-        } else {
-          return ctx.reply("O'yin Hoz Yaratamiz")
-        }
+        return ctx.reply("Ushbu buyruq faqat guruh/kanalda ishlaydi.");
       }
-    } catch (error) {
-      ctx.reply("Xatolik Yuz Berdi");
-      console.log(error);
 
+      let game = await prisma.game.findUnique({ where: { chat_id: chatId } });
+
+      if (game?.status === "RUNNING") {
+        return ctx.reply("Bu guruhda o‘yin allaqachon boshlangan.");
+      }
+
+      if (!game) {
+        game = await prisma.game.create({
+          data: { chat_id: chatId, status: "LOBBY" },
+        });
+      }
+
+      // fetch players (maybe none yet)
+      const players = await prisma.gamePlayer.findMany({
+        where: { gameId: game.id },
+        orderBy: { firstName: "asc" },
+      });
+
+      const msg = await ctx.reply(renderLobby(game, players), {
+        parse_mode: "HTML",
+        ...lobbyKeyboard(chatId),
+      });
+
+      await gameQueue.add(
+        "START_GAME",
+        { gameId: game.id, chatId: game.chat_id },
+        { delay: 60000, jobId: `START_GAME-${game.id}` }
+      );
+
+      await prisma.game.update({
+        where: { id: game.id },
+        data: { lobby_msg: msg.message_id },
+      });
+    } catch (err) {
+      console.log(err);
+      ctx.reply("Xatolik yuz berdi.");
     }
   });
 
-  bot.action(/^join_game:(.+)$/, async (ctx) => {
-    const user_id = ctx.match[1]
-    console.log(user_id);
+  bot.action("join_game", async (ctx) => {
+    try {
+      await ctx.answerCbQuery(); // very important
 
-    ctx.reply("oioi")
+      const chatId = String(ctx.chat.id);
+      const tgId = String(ctx.from.id);
+
+      const game = await prisma.game.findUnique({ where: { chat_id: chatId } });
+      if (!game || game.status !== "LOBBY") return;
+
+      await prisma.gamePlayer.upsert({
+        where: {
+          gameId_telegramId: {
+            gameId: game.id,
+            telegramId: tgId,
+          },
+        },
+        update: {
+          firstName: ctx.from.first_name ?? "User",
+          username: ctx.from.username ?? null,
+        },
+        create: {
+          gameId: game.id,
+          telegramId: tgId,
+          firstName: ctx.from.first_name ?? "User",
+          username: ctx.from.username ?? null,
+        },
+      });
+
+      const players = await prisma.gamePlayer.findMany({
+        where: { gameId: game.id },
+        orderBy: { firstName: "asc" },
+      });
+
+      if (game.lobby_msg) {
+        await ctx.telegram.editMessageText(
+          chatId,
+          game.lobby_msg,
+          ctx.from.id,
+          renderLobby(game, players),
+          {
+            parse_mode: "HTML",
+            ...lobbyKeyboard(chatId),
+          }
+        );
+      }
+    } catch (err) {
+      console.log(err);
+      ctx.reply("Lobby yangilanmadi...")
+    }
   });
 };

@@ -21,26 +21,18 @@ function initGameWorker(bot) {
       if (game.status !== "LOBBY") return;
 
       const playerCount = game.players.length;
+      const MIN_PLAYERS = 8;
 
-      if (playerCount < 2) {
-        await bot.telegram.sendMessage(
-          chatId,
-          `❌ Game cancelled: not enough players (${playerCount}/8).`
-        );
+      if (playerCount < MIN_PLAYERS) {
+        await bot.telegram.sendMessage(chatId, `❌ Game cancelled: not enough players (${playerCount}/${MIN_PLAYERS}).`);
 
-        // cleanup
         await prisma.$transaction([
           prisma.gamePlayer.deleteMany({ where: { gameId } }),
-          prisma.gameAction.deleteMany({ where: { gameId } }),
-          prisma.gameVote.deleteMany({ where: { gameId } }),
-          prisma.gameLog.deleteMany({ where: { gameId } }),
           prisma.game.delete({ where: { id: gameId } }),
         ]);
-
         return;
       }
 
-      // Enough players -> start game
       await prisma.game.update({
         where: { id: gameId },
         data: {

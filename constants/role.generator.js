@@ -1,4 +1,3 @@
-const { ROLES } = require("./roles");
 const crypto = require("crypto")
 
 const RULES = {
@@ -38,23 +37,6 @@ const RULES = {
     // Filler
     CIVILIAN: { team: "CIVIL", minPlayers: 5, maxPerGame: 99, priority: 0 },
 };
-
-const players66 = [
-    { userId: "u1", role: "" },
-    { userId: "u2", role: "" },
-    { userId: "u3", role: "" },
-    { userId: "u4", role: "" },
-    { userId: "u5", role: "" },
-    { userId: "u6", role: "" },
-    { userId: "u6", role: "" },
-    { userId: "u6", role: "" },
-    { userId: "u6", role: "" },
-    { userId: "u6", role: "" },
-    { userId: "u6", role: "" },
-    { userId: "u6", role: "" },
-    { userId: "u7", role: "" },
-    { userId: "u8", role: "" },
-];
 
 function shuffle(arr) {
     const a = [...arr];
@@ -220,4 +202,4 @@ function generateRolesForPlayers(players, RULES) {
         role: mixed[i],
     }));
 }
-module.exports = generateRolesForPlayers
+module.exports = { generateRolesForPlayers, RULES }

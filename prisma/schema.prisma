@@ -26,85 +26,32 @@ model User_equipment {
 }
 
 model Game {
-  id                String       @id @default(uuid())
-  chat_id           String       @unique
-  status            Status       @default(LOBBY)
-  phase             Phase        @default(DAY)
-  dayNumber         Int          @default(0)
-  nightNumber       Int          @default(0)
-  startedAt         DateTime?
-  endedAt           DateTime?
-  lastTransitionAt  DateTime?
-  winnerTeam        String? // "MAFIA" | "CIVIL"
-  creatorTelegramId String? // telegram user_id of /create sender
-  players           GamePlayer[]
-  actions           GameAction[]
-  votes             GameVote[]
-  logs              GameLog[]
+  id        String   @id @default(uuid())
+  chat_id   String   @unique
+  status    Status   @default(LOBBY)
+  lobby_msg Int?
+  createdAt DateTime @default(now())
+
+  startedAt        DateTime?
+  phase            Phase     @default(DAY)
+  dayNumber        Int       @default(0)
+  lastTransitionAt DateTime?
+
+  players GamePlayer[]
 }
 
 model GamePlayer {
-  id              String  @id @default(uuid())
-  gameId          String
-  userId          String // references User.id (UUID)
-  telegramId      String // raw Telegram user_id — needed for DMs
-  role            String? // role key: "DON", "DOCTOR", etc.
-  isAlive         Boolean @default(true)
-  isProtected     Boolean @default(false)
-  lastHealedNight Int? // doctor cannot heal same target 2 nights in a row
-  hasVoted        Boolean @default(false)
+  id         String  @id @default(uuid())
+  gameId     String
+  telegramId String
+  firstName  String
+  username   String?
+  role       String?
+  isAlive    Boolean @default(true)
 
   game Game @relation(fields: [gameId], references: [id], onDelete: Cascade)
 
-  actorActions  GameAction[] @relation("ActorActions")
-  targetActions GameAction[] @relation("TargetActions")
-  votesGiven    GameVote[]   @relation("VoterVotes")
-  votesReceived GameVote[]   @relation("TargetVotes")
-
-  @@unique([gameId, userId])
-}
-
-model GameAction {
-  id             String    @id @default(uuid())
-  gameId         String
-  actorPlayerId  String
-  targetPlayerId String?
-  actionType     String // "KILL" | "HEAL" | "CHECK_ROLE"
-  nightNumber    Int
-  resolvedAt     DateTime?
-  createdAt      DateTime  @default(now())
-
-  game   Game        @relation(fields: [gameId], references: [id], onDelete: Cascade)
-  actor  GamePlayer  @relation("ActorActions", fields: [actorPlayerId], references: [id], onDelete: Cascade)
-  target GamePlayer? @relation("TargetActions", fields: [targetPlayerId], references: [id], onDelete: Cascade)
-
-  @@unique([gameId, actorPlayerId, nightNumber])
-}
-
-model GameVote {
-  id             String   @id @default(uuid())
-  gameId         String
-  voterPlayerId  String
-  targetPlayerId String
-  dayNumber      Int
-  isRevote       Boolean  @default(false)
-  createdAt      DateTime @default(now())
-
-  game   Game       @relation(fields: [gameId], references: [id], onDelete: Cascade)
-  voter  GamePlayer @relation("VoterVotes", fields: [voterPlayerId], references: [id], onDelete: Cascade)
-  target GamePlayer @relation("TargetVotes", fields: [targetPlayerId], references: [id], onDelete: Cascade)
-
-  @@unique([gameId, voterPlayerId, dayNumber, isRevote])
-}
-
-model GameLog {
-  id        String   @id @default(uuid())
-  gameId    String
-  message   String
-  type      String // "DEATH" | "HEAL" | "CHECK" | "LYNCH" | "WIN" | "INFO"
-  createdAt DateTime @default(now())
-
-  game Game @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  @@unique([gameId, telegramId])
 }
 
 enum Status {
