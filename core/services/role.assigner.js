@@ -1,21 +1,9 @@
 const { prisma } = require("../../config/db");
 const { generateRolesForPlayers, RULES } = require("../../constants/role.generator");
+const { safeSendMessage } = require("../../lib/tg.safe");
 
 function roleText(role) {
   return `🎭 Your role: <b>${role}</b>\n\n⚠️ Don’t share it with anyone.`;
-}
-
-async function sendWithRetry(bot, chatId, text, extra, tries = 3) {
-  let lastErr;
-  for (let i = 0; i < tries; i++) {
-    try {
-      return await bot.telegram.sendMessage(chatId, text, extra);
-    } catch (e) {
-      lastErr = e;
-      await new Promise(r => setTimeout(r, 1000 * (2 ** i))); // 1s,2s,4s
-    }
-  }
-  throw lastErr;
 }
 
 async function assignRolesAndNotify(bot, gameId) {
@@ -31,7 +19,6 @@ async function assignRolesAndNotify(bot, gameId) {
 
   const assigned = generateRolesForPlayers(players, RULES);
 
-  // Update DB first
   await prisma.$transaction(
     assigned.map((p) =>
       prisma.gamePlayer.update({
@@ -41,18 +28,20 @@ async function assignRolesAndNotify(bot, gameId) {
     )
   );
 
-  // DM each player safely (one fail doesn't stop others)
   for (const p of assigned) {
     try {
-      await bot.telegram.sendMessage(p.telegramId, roleText(p.role), {
-        parse_mode: "HTML",
-      });
+      await safeSendMessage(
+        bot,
+        p.telegramId,
+        roleText(p.role),
+        { parse_mode: "HTML" },
+        4
+      );
     } catch (e) {
       console.log(
         `[DM FAIL] tg=${p.telegramId} name=${p.firstName}`,
         e?.response?.description || e.code || e.message
       );
-      // continue
     }
   }
 }

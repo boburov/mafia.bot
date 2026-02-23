@@ -1,6 +1,6 @@
 const { prisma } = require("../../config/db");
 const t = require("../../middleware/language.changer");
-const { scheduleJob, gameQueue } = require("../../queue/queue");
+const { gameQueue } = require("../../queue/queue");
 const { renderLobby, lobbyKeyboard } = require("../../lib/lobby.render")
 
 module.exports = function create_game(bot) {
@@ -14,10 +14,6 @@ module.exports = function create_game(bot) {
       }
 
       let game = await prisma.game.findUnique({ where: { chat_id: chatId } });
-
-      if (game?.status === "RUNNING") {
-        return ctx.reply("Bu guruhda o‘yin allaqachon boshlangan.");
-      }
 
       if (!game) {
         game = await prisma.game.create({
