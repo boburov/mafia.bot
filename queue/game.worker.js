@@ -18,6 +18,7 @@ function initGameWorker(bot) {
         case "START_GAME": {
           try {
             const { gameId, chatId } = job.data;
+            
 
             const game = await prisma.game.findUnique({
               where: { id: gameId },

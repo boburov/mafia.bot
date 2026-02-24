@@ -27,6 +27,15 @@ module.exports = function create_game(bot) {
         );
       }
 
+      const lang = game.creatorLang || "eng";
+
+      const creator = await prisma.user.findUnique({ where: { user_id: String(ctx.from.id) } });
+      const creatorLang = creator?.lang || "eng";
+
+      game = await prisma.game.create({
+        data: { chat_id: chatId, status: "LOBBY", creatorLang },
+      });
+
       let game = await prisma.game.findUnique({ where: { chat_id: chatId } });
 
       if (!game) {
@@ -135,5 +144,32 @@ module.exports = function create_game(bot) {
       console.log(err);
       ctx.reply(t(ctx, "errors.lobby_update_fail"))
     }
+  });
+
+  bot.command("stop", async (ctx) => {
+    const chatId = String(ctx.chat.id);
+    if (!chatId.startsWith("-100")) return ctx.reply("Only groups.");
+
+    const game = await prisma.game.findUnique({ where: { chat_id: chatId } });
+    if (!game || game.status !== "RUNNING") return ctx.reply("No running game.");
+
+    const lang = game.creatorLang || "eng";
+
+    await prisma.game.update({
+      where: { id: game.id },
+      data: { status: "FINISHED", phase: "DAY", lastTransitionAt: new Date() },
+    });
+
+    await cancelGameJobs(game.id);
+
+    await prisma.$transaction([
+      prisma.nightAction.deleteMany({ where: { gameId: game.id } }),
+      prisma.vote.deleteMany({ where: { gameId: game.id } }),
+      prisma.gamePlayer.deleteMany({ where: { gameId: game.id } }),
+      // keep game row (history). If you want delete:
+      // prisma.game.delete({ where: { id: game.id } }),
+    ]);
+
+    return ctx.reply(t(lang, "game.stopped"));
   });
 };

@@ -1,24 +1,19 @@
+// queue/queue.js
 const { Queue } = require("bullmq");
 const { connection } = require("./redis");
 
 const gameQueue = new Queue("game", { connection });
 
-async function scheduleJob(name, data, delayMs, dedupKey) {
-  await gameQueue.add(name, data, {
-    delay: delayMs,
-    jobId: dedupKey,
-    attempts: 3,
-    backoff: { type: "fixed", delay: 2000 },
-  });
-}
-
-async function cancelJob(dedupKey) {
-  try {
-    const job = await gameQueue.getJob(dedupKey);
-    if (job) await job.remove();
-  } catch (e) {
-    console.error("[queue] cancelJob error:", e.message);
+async function cancelGameJobs(gameId) {
+  const states = ["delayed", "wait", "paused", "prioritized"];
+  for (const state of states) {
+    const jobs = await gameQueue.getJobs([state], 0, 2000, true);
+    for (const job of jobs) {
+      if (job?.data?.gameId === gameId) {
+        try { await job.remove(); } catch {}
+      }
+    }
   }
 }
 
-module.exports = { gameQueue, scheduleJob, cancelJob };
+module.exports = { gameQueue, cancelGameJobs };
