@@ -8,6 +8,7 @@ const { resolveNight } = require("../core/engine/resolve");
 const { checkWinAndFinish } = require("../core/engine/win");
 const { startVoting, finishVoting } = require("../core/engine/voting");
 const { assignRolesAndNotify } = require("../core/services/role.assigner");
+const t = require("../middleware/language.changer");
 
 function initGameWorker(bot) {
   const worker = new Worker(
@@ -26,11 +27,12 @@ function initGameWorker(bot) {
 
             const MIN_PLAYERS = 8;
             const playerCount = game.players.length;
+            const lang = game.creatorLang || "eng";
 
             if (playerCount < MIN_PLAYERS) {
               await bot.telegram.sendMessage(
                 chatId,
-                `❌ Game cancelled: not enough players (${playerCount}/${MIN_PLAYERS}).`
+                t(lang, "game.cancelled", { count: playerCount })
               );
 
               await prisma.$transaction([
@@ -58,7 +60,7 @@ function initGameWorker(bot) {
             await assignRolesAndNotify(bot, gameId);
 
             try {
-              await safeSendMessage(bot, chatId, "📩 Roles have been sent in DM!");
+              await safeSendMessage(bot, chatId, t(lang, "game.roles_sent"));
             } catch (e) {
               console.log("[GROUP SEND FAIL]", e?.code || e?.message);
             }
@@ -74,6 +76,7 @@ function initGameWorker(bot) {
             return;
           }
         }
+// ... rest of the worker code remains largely the same as it calls startNight/resolveNight which are already updated
 
         case "NIGHT_PHASE": {
           const { gameId, chatId } = job.data;

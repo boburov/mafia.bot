@@ -37,6 +37,9 @@ model Game {
 
   nightNumber Int @default(0)
 
+  creatorId   String?
+  creatorLang Lang    @default(eng)
+
   lastTransitionAt DateTime?
   players          GamePlayer[]
   nightActions     NightAction[]

@@ -1,4 +1,5 @@
 const { prisma } = require("../../config/db");
+const t = require("../../middleware/language.changer");
 
 function mention(tgId, name) {
   const safe = (name || "User").replace(/[<&>]/g, "");
@@ -20,6 +21,7 @@ async function checkWinAndFinish(bot, gameId, chatId) {
   if (!game) return { finished: true };
 
   const alive = game.players.filter(p => p.isAlive);
+  const lang = game.creatorLang || "eng";
 
   // ✅ user request: if 1 alive -> winner no matter what
   if (alive.length <= 1) {
@@ -31,11 +33,11 @@ async function checkWinAndFinish(bot, gameId, chatId) {
     if (alive.length === 1) {
       await bot.telegram.sendMessage(
         chatId,
-        `🏆 Winner: ${mention(alive[0].telegramId, alive[0].firstName)}`,
+        t(lang, "game.winner", { name: mention(alive[0].telegramId, alive[0].firstName) }),
         { parse_mode: "HTML" }
       );
     } else {
-      await bot.telegram.sendMessage(chatId, `🏁 Game ended. No survivors.`);
+      await bot.telegram.sendMessage(chatId, t(lang, "game.no_survivors"));
     }
     return { finished: true };
   }
@@ -52,6 +54,7 @@ async function resolveNight(bot, gameId, chatId) {
 
   const nightNumber = game.nightNumber || 0;
   const alive = game.players.filter(p => p.isAlive);
+  const lang = game.creatorLang || "eng";
 
   // load actions
   const actions = await prisma.nightAction.findMany({
@@ -118,15 +121,16 @@ async function resolveNight(bot, gameId, chatId) {
   });
 
   if (deaths.length === 0) {
-    await bot.telegram.sendMessage(chatId, `🌅 Morning: nobody died tonight.`);
+    await bot.telegram.sendMessage(chatId, t(lang, "game.nobody_died"));
   } else {
     const lines = deaths.map(d => {
       const p = byTg.get(d.tgId);
-      const killerText = d.by === "MAFIA" ? "🤵 Mafia" : d.by === "KILLER" ? "🔪 Killer" : "❓ Unknown";
-      return `⚰️ ${mention(d.tgId, p?.firstName)} — killed by ${killerText}`;
+      const killerLabel = d.by === "MAFIA" ? "roles.mafia" : d.by === "KILLER" ? "roles.killer" : "roles.unknown";
+      const killerText = t(lang, killerLabel);
+      return t(lang, "night.result.killed", { name: mention(d.tgId, p?.firstName), killer: killerText });
     }).join("\n");
 
-    await bot.telegram.sendMessage(chatId, `🌅 <b>Morning</b>\n\n${lines}`, { parse_mode: "HTML" });
+    await bot.telegram.sendMessage(chatId, `${t(lang, "game.morning")}\n\n${lines}`, { parse_mode: "HTML" });
   }
 
   // win check
