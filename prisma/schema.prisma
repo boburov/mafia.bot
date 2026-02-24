@@ -26,53 +26,21 @@ model User_equipment {
 }
 
 model Game {
-  id               String    @id @default(uuid())
-  chat_id          String    @unique
-  status           Status    @default(LOBBY)
-  lobby_msg        Int?
-  createdAt        DateTime  @default(now())
-  startedAt        DateTime?
-  phase            Phase     @default(DAY)
-  dayNumber        Int       @default(0)
-  nightNumber      Int       @default(0)
+  id        String    @id @default(uuid())
+  chat_id   String    @unique
+  status    Status    @default(LOBBY)
+  lobby_msg Int?
+  createdAt DateTime  @default(now())
+  startedAt DateTime?
+  phase     Phase     @default(DAY)
+  dayNumber Int       @default(0)
+
+  nightNumber Int @default(0)
+
   lastTransitionAt DateTime?
-
-  players      GamePlayer[]
-  nightActions NightAction[]
-  votes        Vote[]
-}
-
-model NightAction {
-  id        String   @id @default(uuid())
-  gameId    String
-  night     Int
-  actorId   String // GamePlayer.id
-  type      String // "KILL" | "HEAL" | "CHECK_ROLE" | "BLOCK"
-  targetId  String? // GamePlayer.id (nullable)
-  createdAt DateTime @default(now())
-
-  game  Game       @relation(fields: [gameId], references: [id], onDelete: Cascade)
-  actor GamePlayer @relation(fields: [actorId], references: [id], onDelete: Cascade)
-
-  @@unique([gameId, night, actorId])
-  @@index([gameId, night])
-}
-
-model Vote {
-  id        String   @id @default(uuid())
-  gameId    String
-  day       Int
-  voterId   String
-  targetId  String?
-  weight    Int      @default(1)
-  createdAt DateTime @default(now())
-
-  game   Game        @relation(fields: [gameId], references: [id], onDelete: Cascade)
-  voter  GamePlayer  @relation("VoteVoter", fields: [voterId], references: [id], onDelete: Cascade)
-  target GamePlayer? @relation("VoteTarget", fields: [targetId], references: [id], onDelete: SetNull)
-
-  @@unique([gameId, day, voterId])
-  @@index([gameId, day])
+  players          GamePlayer[]
+  nightActions     NightAction[]
+  votes            Vote[]
 }
 
 model GamePlayer {
@@ -86,11 +54,46 @@ model GamePlayer {
 
   game Game @relation(fields: [gameId], references: [id], onDelete: Cascade)
 
-  votesGiven    Vote[]        @relation("VoteVoter")
-  votesReceived Vote[]        @relation("VoteTarget")
-  nightActions  NightAction[]
+  // ✅ opposite relations for Vote
+  votesCast     Vote[] @relation("VoteVoter")
+  votesReceived Vote[] @relation("VoteTarget")
 
   @@unique([gameId, telegramId])
+}
+
+model NightAction {
+  id               String   @id @default(uuid())
+  gameId           String
+  nightNumber      Int
+  actorTelegramId  String
+  actionType       String
+  targetTelegramId String?
+  createdAt        DateTime @default(now())
+
+  game Game @relation(fields: [gameId], references: [id], onDelete: Cascade)
+
+  @@unique([gameId, nightNumber, actorTelegramId])
+  @@index([gameId, nightNumber])
+}
+
+model Vote {
+  id        String   @id @default(uuid())
+  gameId    String
+  day       Int
+  voterId   String
+  targetId  String?
+  weight    Int      @default(1)
+  createdAt DateTime @default(now())
+
+  game Game @relation(fields: [gameId], references: [id], onDelete: Cascade)
+
+  // ✅ who voted
+  voter GamePlayer @relation("VoteVoter", fields: [voterId], references: [id], onDelete: Cascade)
+
+  // ✅ who got voted (nullable = skip)
+  target GamePlayer? @relation("VoteTarget", fields: [targetId], references: [id], onDelete: Cascade)
+
+  @@unique([gameId, day, voterId])
 }
 
 enum Status {

@@ -37,7 +37,6 @@ function initGameWorker(bot) {
                 prisma.gamePlayer.deleteMany({ where: { gameId } }),
                 prisma.game.delete({ where: { id: gameId } }),
               ]);
-
               return;
             }
 
@@ -56,26 +55,32 @@ function initGameWorker(bot) {
 
             if (started.count === 0) return;
 
+            await assignRolesAndNotify(bot, gameId);
+
+            try {
+              await safeSendMessage(bot, chatId, "📩 Roles have been sent in DM!");
+            } catch (e) {
+              console.log("[GROUP SEND FAIL]", e?.code || e?.message);
+            }
+
             await gameQueue.add(
               "NIGHT_PHASE",
               { gameId, chatId },
               { delay: 30_000, jobId: `NIGHT_PHASE-${gameId}`, removeOnComplete: true }
             );
-
-            await assignRolesAndNotify(bot, gameId);
-            try {
-              await safeSendMessage(bot, chatId, "📩 Roles have been sent in DM!");
-            } catch (e) {
-              console.log("[GROUP SEND FAIL]", e?.code || e?.message);
-              // DO NOT throw
-            }
             return;
           } catch (e) {
             console.error("[START_GAME fatal]", e);
             return;
           }
-        } case "NIGHT_PHASE": {
+        }
+
+        case "NIGHT_PHASE": {
           const { gameId, chatId } = job.data;
+
+          const game = await prisma.game.findUnique({ where: { id: gameId } });
+          if (!game || game.status !== "RUNNING") return;
+
           await startNight(bot, gameId, chatId);
 
           await gameQueue.add(
@@ -85,23 +90,28 @@ function initGameWorker(bot) {
           );
           return;
         }
+
         case "NIGHT_RESOLVE": {
           const { gameId, chatId } = job.data;
-
-          await resolveNight(bot, gameId, chatId);
 
           const game = await prisma.game.findUnique({ where: { id: gameId } });
           if (!game || game.status !== "RUNNING") return;
 
-          // start voting
+          await resolveNight(bot, gameId, chatId);
+
+          // ✅ after resolve, check win (1 alive => end)
+          const win = await checkWinAndFinish(bot, gameId, chatId);
+          if (win?.finished) return;
+
           await gameQueue.add(
             "VOTING_START",
             { gameId, chatId },
-            { delay: 3_000, jobId: `VOTING_START-${gameId}-${Date.now()}`, removeOnComplete: true }
+            { delay: 1_000, jobId: `VOTING_START-${gameId}-${Date.now()}`, removeOnComplete: true }
           );
-
           return;
-        } case "VOTING_START": {
+        }
+
+        case "VOTING_START": {
           const { gameId, chatId } = job.data;
 
           const game = await prisma.game.findUnique({ where: { id: gameId } });
@@ -109,7 +119,6 @@ function initGameWorker(bot) {
 
           await startVoting(bot, gameId, chatId);
 
-          // voting lasts 45s (change if you want)
           await gameQueue.add(
             "VOTING_END",
             { gameId, chatId },
@@ -127,25 +136,16 @@ function initGameWorker(bot) {
           await finishVoting(bot, gameId, chatId);
 
           const win = await checkWinAndFinish(bot, gameId, chatId);
-          if (win.finished) return; // ✅ stop the loop if game ended
+          if (win?.finished) return;
 
-          await gameQueue.add("NIGHT_PHASE", { gameId, chatId }, { delay: 3000, jobId: `NIGHT_PHASE-${gameId}-${Date.now()}`, removeOnComplete: true });
+          await gameQueue.add(
+            "NIGHT_PHASE",
+            { gameId, chatId },
+            { delay: 3_000, jobId: `NIGHT_PHASE-${gameId}-${Date.now()}`, removeOnComplete: true }
+          );
           return;
         }
-        case "NIGHT_RESOLVE": {
-          const { gameId, chatId } = job.data;
 
-          const game = await prisma.game.findUnique({ where: { id: gameId } });
-          if (!game || game.status !== "RUNNING") return;
-
-          await resolveNight(bot, gameId, chatId);
-
-          const win = await checkWinAndFinish(bot, gameId, chatId);
-          if (win.finished) return;
-
-          await gameQueue.add("VOTING_START", { gameId, chatId }, { delay: 1000, jobId: `VOTING_START-${gameId}-${Date.now()}`, removeOnComplete: true });
-          return;
-        }
         default:
           return;
       }

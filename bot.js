@@ -16,36 +16,32 @@ function bot_runner(bot) {
 
       const [_, gameId, dayStr, targetTg] = String(ctx.callbackQuery.data).split("|");
       const day = Number(dayStr);
-
       const voterTg = String(ctx.from.id);
 
       const game = await prisma.game.findUnique({
         where: { id: gameId },
         include: { players: true },
       });
-      if (!game || game.phase !== "VOTING" || game.dayNumber !== day) {
-        return; // voting already ended
-      }
+
+      if (!game || game.phase !== "VOTING" || game.dayNumber !== day) return;
 
       const voter = game.players.find(p => p.telegramId === voterTg);
       if (!voter || !voter.isAlive) return;
 
-      // voter weight: Gentleman = 2 else 1
       const weight = (voter.role === "GENTLEMAN") ? 2 : 1;
 
-      const target = (targetTg === "0") ? null : game.players.find(p => p.telegramId === targetTg && p.isAlive);
+      const target = (targetTg === "0")
+        ? null
+        : game.players.find(p => p.telegramId === targetTg && p.isAlive);
+
       const targetId = target ? target.id : null;
 
       await prisma.vote.upsert({
-        where: {
-          gameId_day_voterId: { gameId, day, voterId: voter.id },
-        },
+        where: { gameId_day_voterId: { gameId, day, voterId: voter.id } },
         update: { targetId, weight },
         create: { gameId, day, voterId: voter.id, targetId, weight },
       });
 
-      // don’t edit the big group message (it affects everyone)
-      // just show a small popup to voter
       await ctx.answerCbQuery("✅ Vote saved!");
     } catch (e) {
       console.log("vote handler error:", e);
