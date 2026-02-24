@@ -13,6 +13,20 @@ module.exports = function create_game(bot) {
         return ctx.reply("Ushbu buyruq faqat guruh/kanalda ishlaydi.");
       }
 
+      const userId = String(ctx.from.id);
+
+      // 1️⃣ check if user started bot
+      const userExists = await prisma.user.findUnique({
+        where: { user_id: userId }
+      });
+
+      if (!userExists) {
+        return ctx.answerCbQuery(
+          "⚠️ O‘yinda qatnashish uchun botni ochib /start bosing.\n\nSo‘ng qaytib kelib Join ni bosing.",
+          { show_alert: true }
+        );
+      }
+
       let game = await prisma.game.findUnique({ where: { chat_id: chatId } });
 
       if (!game) {
