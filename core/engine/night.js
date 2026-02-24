@@ -1,21 +1,20 @@
 const { Markup } = require("telegraf");
 const { prisma } = require("../../config/db");
-const t = require("../../middleware/language.changer");
 
 // Faqat MVP role->action map (keyin kengaytirasan)
 function roleToNightAction(role) {
     switch (role) {
         case "DON":
         case "KILLER":
-            return { type: "KILL", labelKey: "night.actions.kill" };
+            return { type: "KILL", label: "🔪 Kill" };
         case "DOCTOR":
         case "GUARD":
-            return { type: "HEAL", labelKey: "night.actions.heal" };
+            return { type: "HEAL", label: "🧑🏻‍⚕ Heal" };
         case "COMMISSAR":
         case "SPY":
-            return { type: "CHECK_ROLE", labelKey: "night.actions.check" };
+            return { type: "CHECK_ROLE", label: "🕵️ Check" };
         case "LOVER":
-            return { type: "BLOCK", labelKey: "night.actions.block" };
+            return { type: "BLOCK", label: "💊 Block" };
         default:
             return null;
     }
@@ -27,7 +26,7 @@ function chunk(arr, size) {
     return out;
 }
 
-function buildTargetsKeyboard(gameId, nightNumber, actionType, alivePlayers, excludeTelegramId, lang) {
+function buildTargetsKeyboard(gameId, nightNumber, actionType, alivePlayers, excludeTelegramId) {
     const targets = alivePlayers
         .filter((p) => p.telegramId !== excludeTelegramId)
         .map((p) => ({
@@ -39,7 +38,7 @@ function buildTargetsKeyboard(gameId, nightNumber, actionType, alivePlayers, exc
         row.map((b) => Markup.button.callback(b.text, b.data))
     );
 
-    rows.push([Markup.button.callback(t(lang, "common.cancel"), `na|${gameId}|${nightNumber}|CANCEL|0`)]);
+    rows.push([Markup.button.callback("❌ Cancel", `na|${gameId}|${nightNumber}|CANCEL|0`)]);
     return Markup.inlineKeyboard(rows);
 }
 
@@ -52,7 +51,6 @@ async function startNight(bot, gameId, chatId) {
 
     // phase NIGHT + nightNumber++
     const nextNight = (game.nightNumber || 0) + 1;
-    const groupLang = game.creatorLang || "eng";
 
     await prisma.game.update({
         where: { id: gameId },
@@ -67,24 +65,19 @@ async function startNight(bot, gameId, chatId) {
     const alive = game.players.filter((p) => p.isAlive);
 
     // group announce
-    await bot.telegram.sendMessage(chatId, t(groupLang, "night.started", { number: nextNight }));
+    await bot.telegram.sendMessage(chatId, `🌙 Night #${nextNight} started! Check your DM to act.`);
 
     // DM actions
     for (const p of alive) {
         const act = roleToNightAction(p.role);
         if (!act) continue;
 
-        // Fetch user lang for DM
-        const user = await prisma.user.findUnique({ where: { user_id: p.telegramId } });
-        const userLang = user?.lang || "eng";
+        const kb = buildTargetsKeyboard(gameId, nextNight, act.type, alive, p.telegramId);
 
-        const kb = buildTargetsKeyboard(gameId, nextNight, act.type, alive, p.telegramId, userLang);
-
-        const text = t(userLang, "night.dm_title", {
-            number: nextNight,
-            role: p.role,
-            action: t(userLang, act.labelKey)
-        });
+        const text =
+            `🌙 <b>Night #${nextNight}</b>\n` +
+            `Your role: <b>${p.role}</b>\n` +
+            `Choose target for: <b>${act.label}</b>`;
 
         try {
             await bot.telegram.sendMessage(p.telegramId, text, {

@@ -1,6 +1,5 @@
 const { prisma } = require("../../config/db");
 const { Markup } = require("telegraf");
-const t = require("../../middleware/language.changer");
 
 // callback format: v|<gameId>|<day>|<targetTelegramId or 0>
 function voteCb(gameId, day, targetTgId) {
@@ -12,7 +11,7 @@ function mention(tgId, name) {
   return `<a href="tg://user?id=${tgId}">${safe}</a>`;
 }
 
-function buildVoteKeyboard(gameId, day, alivePlayers, lang) {
+function buildVoteKeyboard(gameId, day, alivePlayers) {
   const rows = alivePlayers.map(p => ([
     Markup.button.callback(
       `${p.firstName}${p.username ? " @" + p.username : ""}`,
@@ -21,7 +20,7 @@ function buildVoteKeyboard(gameId, day, alivePlayers, lang) {
   ]));
 
   // skip vote
-  rows.push([Markup.button.callback(t(lang, "voting.skip_button"), voteCb(gameId, day, "0"))]);
+  rows.push([Markup.button.callback("⏭ Skip / No lynch", voteCb(gameId, day, "0"))]);
 
   return Markup.inlineKeyboard(rows);
 }
@@ -35,7 +34,6 @@ async function startVoting(bot, gameId, chatId) {
 
   const day = game.dayNumber || 1;
   const alive = game.players.filter(p => p.isAlive);
-  const lang = game.creatorLang || "eng";
 
   // set phase
   await prisma.game.update({
@@ -50,8 +48,8 @@ async function startVoting(bot, gameId, chatId) {
 
   await bot.telegram.sendMessage(
     chatId,
-    t(lang, "voting.started", { count: alive.length, list: lines }),
-    { parse_mode: "HTML", ...buildVoteKeyboard(gameId, day, alive, lang) }
+    `🌅 <b>Morning</b>\n\n🗳 <b>Voting started</b>\nPick your suspect below.\n\n👥 <b>Alive (${alive.length})</b>\n${lines}\n\n⏳ Voting ends soon...`,
+    { parse_mode: "HTML", ...buildVoteKeyboard(gameId, day, alive) }
   );
 }
 
@@ -63,7 +61,6 @@ async function finishVoting(bot, gameId, chatId) {
   if (!game || game.status !== "RUNNING") return;
 
   const day = game.dayNumber || 1;
-  const lang = game.creatorLang || "eng";
 
   const aliveById = new Map(game.players.filter(p => p.isAlive).map(p => [p.id, p]));
   const aliveByTg = new Map(game.players.filter(p => p.isAlive).map(p => [p.telegramId, p]));
@@ -82,7 +79,7 @@ async function finishVoting(bot, gameId, chatId) {
 
   // if nobody voted
   if (tally.size === 0) {
-    await bot.telegram.sendMessage(chatId, t(lang, "voting.no_votes"));
+    await bot.telegram.sendMessage(chatId, "🟨 No votes. Nobody is lynched.");
     return { lynched: false };
   }
 
@@ -94,7 +91,7 @@ async function finishVoting(bot, gameId, chatId) {
 
   // tie => nobody lynched
   if (top.length >= 2) {
-    await bot.telegram.sendMessage(chatId, t(lang, "voting.tie", { count: top.length }));
+    await bot.telegram.sendMessage(chatId, `🟨 Tie (${top.length} suspects). Nobody is lynched.`);
     return { lynched: false };
   }
 
@@ -102,13 +99,13 @@ async function finishVoting(bot, gameId, chatId) {
 
   // skip won
   if (!winnerTargetId) {
-    await bot.telegram.sendMessage(chatId, t(lang, "voting.skipped"));
+    await bot.telegram.sendMessage(chatId, "🟩 Majority voted to skip. Nobody is lynched.");
     return { lynched: false };
   }
 
   const target = aliveById.get(winnerTargetId);
   if (!target) {
-    await bot.telegram.sendMessage(chatId, t(lang, "voting.target_not_alive"));
+    await bot.telegram.sendMessage(chatId, "🟨 Target is not alive anymore. Nobody is lynched.");
     return { lynched: false };
   }
 
@@ -124,7 +121,7 @@ async function finishVoting(bot, gameId, chatId) {
 
     await bot.telegram.sendMessage(
       chatId,
-      t(lang, "voting.protected", { name: mention(target.telegramId, target.firstName) }),
+      `🛡 ${mention(target.telegramId, target.firstName)} was protected and survives the lynch!`,
       { parse_mode: "HTML" }
     );
     return { lynched: false };
@@ -138,7 +135,7 @@ async function finishVoting(bot, gameId, chatId) {
 
   await bot.telegram.sendMessage(
     chatId,
-    t(lang, "voting.lynched", { name: mention(target.telegramId, target.firstName) }),
+    `⚰️ ${mention(target.telegramId, target.firstName)} was lynched.`,
     { parse_mode: "HTML" }
   );
 

@@ -10,7 +10,7 @@ module.exports = function create_game(bot) {
       const chatId = String(ctx.chat.id);
 
       if (!chatId.startsWith("-100")) {
-        return ctx.reply(t(ctx, "errors.group_only"));
+        return ctx.reply("Ushbu buyruq faqat guruh/kanalda ishlaydi.");
       }
 
       const userId = String(ctx.from.id);
@@ -22,7 +22,7 @@ module.exports = function create_game(bot) {
 
       if (!userExists) {
         return ctx.answerCbQuery(
-          t("eng", "errors.start_bot"), // fallback to eng if no user record found for current user
+          "⚠️ O‘yinda qatnashish uchun botni ochib /start bosing.\n\nSo‘ng qaytib kelib Join ni bosing.",
           { show_alert: true }
         );
       }
@@ -40,17 +40,9 @@ module.exports = function create_game(bot) {
 
       if (!game) {
         game = await prisma.game.create({
-          data: {
-            chat_id: chatId,
-            status: "LOBBY",
-            creatorId: userId,
-            creatorLang: userExists.lang || "eng"
-          },
+          data: { chat_id: chatId, status: "LOBBY" },
         });
       }
-
-      // Set group lang in context for future calls in this handler
-      ctx.state.gameCreatorLang = game.creatorLang;
 
       // fetch players (maybe none yet)
       const players = await prisma.gamePlayer.findMany({
@@ -90,7 +82,7 @@ module.exports = function create_game(bot) {
       });
     } catch (err) {
       console.log(err);
-      ctx.reply(t(ctx, "common.error"));
+      ctx.reply("Xatolik yuz berdi.");
     }
   });
 
@@ -103,9 +95,6 @@ module.exports = function create_game(bot) {
 
       const game = await prisma.game.findUnique({ where: { chat_id: chatId } });
       if (!game || game.status !== "LOBBY") return;
-
-      // Set group lang for lobby update
-      ctx.state.gameCreatorLang = game.creatorLang;
 
       await prisma.gamePlayer.upsert({
         where: {
@@ -142,7 +131,7 @@ module.exports = function create_game(bot) {
       }
     } catch (err) {
       console.log(err);
-      ctx.reply(t(ctx, "errors.lobby_update_fail"))
+      ctx.reply("Lobby yangilanmadi...")
     }
   });
 
