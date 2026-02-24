@@ -14,6 +14,7 @@ async function setupCommands() {
     { command: "lang", description: "Change Language" },
     { command: "create", description: "Create Game" },
     { command: "profile", description: "Profile" },
+    { command: "stop", description: "Stop Game" },
   ]);
 }
 

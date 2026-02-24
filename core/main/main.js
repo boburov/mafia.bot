@@ -8,10 +8,8 @@ module.exports = function create_game(bot) {
   bot.command("create", async (ctx) => {
     try {
       const chatId = String(ctx.chat.id);
+      if (!chatId.startsWith("-100")) return ctx.reply(t(ctx, "errors.group_only"));
 
-      if (!chatId.startsWith("-100")) {
-        return ctx.reply("Ushbu buyruq faqat guruh/kanalda ishlaydi.");
-      }
 
       const userId = String(ctx.from.id);
 
@@ -21,30 +19,25 @@ module.exports = function create_game(bot) {
       });
 
       if (!userExists) {
-        return ctx.answerCbQuery(
+        return ctx.reply(
           "⚠️ O‘yinda qatnashish uchun botni ochib /start bosing.\n\nSo‘ng qaytib kelib Join ni bosing.",
           { show_alert: true }
         );
       }
 
-      const lang = game.creatorLang || "eng";
-
-      const creator = await prisma.user.findUnique({ where: { user_id: String(ctx.from.id) } });
-      const creatorLang = creator?.lang || "eng";
-
-      game = await prisma.game.create({
-        data: { chat_id: chatId, status: "LOBBY", creatorLang },
-      });
-
       let game = await prisma.game.findUnique({ where: { chat_id: chatId } });
 
       if (!game) {
         game = await prisma.game.create({
-          data: { chat_id: chatId, status: "LOBBY" },
+          data: {
+            chat_id: chatId,
+            status: "LOBBY",
+            creatorLang: userExists.lang || "eng", // ✅ works after migration
+          },
         });
       }
 
-      // fetch players (maybe none yet)
+
       const players = await prisma.gamePlayer.findMany({
         where: { gameId: game.id },
         orderBy: { firstName: "asc" },
@@ -56,11 +49,9 @@ module.exports = function create_game(bot) {
       });
 
       try {
-        await ctx.telegram.pinChatMessage(ctx.chat.id, msg.message_id, {
-          disable_notification: true,
-        });
+        await ctx.telegram.pinChatMessage(ctx.chat.id, msg.message_id, { disable_notification: true });
       } catch (e) {
-        console.log("Botda Admindagi Hamma Huquq Yo'q:", e?.response?.description || e.message);
+        console.log("Pin fail:", e?.response?.description || e.message);
       }
 
       await gameQueue.add(
@@ -80,9 +71,10 @@ module.exports = function create_game(bot) {
         where: { id: game.id },
         data: { lobby_msg: msg.message_id },
       });
+
     } catch (err) {
       console.log(err);
-      ctx.reply("Xatolik yuz berdi.");
+      ctx.reply(t(ctx, "common.error"));
     }
   });
 
@@ -95,6 +87,20 @@ module.exports = function create_game(bot) {
 
       const game = await prisma.game.findUnique({ where: { chat_id: chatId } });
       if (!game || game.status !== "LOBBY") return;
+
+      const userId = String(ctx.from.id);
+
+      // 1️⃣ check if user started bot
+      const userExists = await prisma.user.findUnique({
+        where: { user_id: userId }
+      });
+
+      if (!userExists) {
+        return ctx.reply(
+          "⚠️ O‘yinda qatnashish uchun botni ochib /start bosing.\n\nSo‘ng qaytib kelib Join ni bosing.",
+          { show_alert: true }
+        );
+      }
 
       await prisma.gamePlayer.upsert({
         where: {
@@ -155,8 +161,7 @@ module.exports = function create_game(bot) {
       prisma.nightAction.deleteMany({ where: { gameId: game.id } }),
       prisma.vote.deleteMany({ where: { gameId: game.id } }),
       prisma.gamePlayer.deleteMany({ where: { gameId: game.id } }),
-      // keep game row (history). If you want delete:
-      // prisma.game.delete({ where: { id: game.id } }),
+      prisma.game.delete({ where: { id: game.id } }),
     ]);
 
     return ctx.reply(t(lang, "game.stopped"));
