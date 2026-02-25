@@ -8,92 +8,17 @@ datasource db {
 }
 
 model User {
-  id             String           @id @default(uuid())
-  user_id        String           @unique
-  money          Int              @default(0)
-  ruby           Int              @default(0)
-  defense        Int              @default(0)
-  documents      Int              @default(0)
-  lang           Lang             @default(eng)
-  user_equipment User_equipment[]
-}
-
-model User_equipment {
-  id     String  @id @default(uuid())
-  name   String
-  userId String?
-  user   User?   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id      String @id @default(uuid())
+  user_id String @unique
+  money   Int    @default(0)
+  diamond Int    @default(0)
+  role    String @default("")
 }
 
 model Game {
-  id        String    @id @default(uuid())
-  chat_id   String    @unique
-  status    Status    @default(LOBBY)
-  lobby_msg Int?
-  createdAt DateTime  @default(now())
-  startedAt DateTime?
-  phase     Phase     @default(DAY)
-  dayNumber Int       @default(0)
-
-  nightNumber Int @default(0)
-
-  lastTransitionAt DateTime?
-  players          GamePlayer[]
-  nightActions     NightAction[]
-  votes            Vote[]
-}
-
-model GamePlayer {
-  id         String  @id @default(uuid())
-  gameId     String
-  telegramId String
-  firstName  String
-  username   String?
-  role       String?
-  isAlive    Boolean @default(true)
-
-  game Game @relation(fields: [gameId], references: [id], onDelete: Cascade)
-
-  // ✅ opposite relations for Vote
-  votesCast     Vote[] @relation("VoteVoter")
-  votesReceived Vote[] @relation("VoteTarget")
-
-  @@unique([gameId, telegramId])
-}
-
-model NightAction {
-  id               String   @id @default(uuid())
-  gameId           String
-  nightNumber      Int
-  actorTelegramId  String
-  actionType       String
-  targetTelegramId String?
-  createdAt        DateTime @default(now())
-
-  game Game @relation(fields: [gameId], references: [id], onDelete: Cascade)
-
-  @@unique([gameId, nightNumber, actorTelegramId])
-  @@index([gameId, nightNumber])
-}
-
-model Vote {
-  id        String   @id @default(uuid())
-  gameId    String
-  day       Int
-  voterId   String
-  targetId  String?
-  weight    Int      @default(1)
-  createdAt DateTime @default(now())
-
-  game Game @relation(fields: [gameId], references: [id], onDelete: Cascade)
-
-  // ✅ who voted
-  voter GamePlayer @relation("VoteVoter", fields: [voterId], references: [id], onDelete: Cascade)
-
-  // ✅ who got voted (nullable = skip)
-  target GamePlayer? @relation("VoteTarget", fields: [targetId], references: [id], onDelete: Cascade)
-
-  @@unique([gameId, day, voterId])
+  id       String @id @default(uuid())
+  userTgId String @unique
+  role     String @default("")
 }
 
 enum Status {
