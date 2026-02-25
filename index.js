@@ -4,8 +4,6 @@ const bot = new Telegraf(process.env.BOT_TOKEN);
 
 const bot_runner = require("./bot");
 const { connectDB, } = require("./config/db");
-const botMiddlewar = require("./middleware/getLanguage");
-const start = require("./core/commands/start");
 
 // ---------- Commands ----------
 async function setupCommands() {
@@ -18,23 +16,10 @@ async function setupCommands() {
   ]);
 }
 
-// Callback: enter_chat
-bot.action("enter_chat", async (ctx) => {
-  try {
-    // spinner o‘chirish (har doim birinchi)
-    await ctx.answerCbQuery();
-
-    // keyin reply
-    await ctx.reply("Send /create in group chat 🙂");
-  } catch (e) {
-    console.error("enter_chat error:", e);
-  }
-});
 
 // ---------- Boot ----------
 async function boot() {
   try {
-    await botMiddlewar(bot);
     await bot_runner(bot);
     await connectDB();
     await setupCommands();
