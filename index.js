@@ -16,7 +16,6 @@ async function setupCommands() {
   ]);
 }
 
-
 // ---------- Boot ----------
 async function boot() {
   try {

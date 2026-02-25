@@ -16,9 +16,20 @@ model User {
 }
 
 model Game {
-  id       String @id @default(uuid())
+  id      String    @id @default(uuid())
+  chatId  String
+  status  Status    @default(LOBBY)
+  phase   Phase     @default(DAY)
+  players Players[]
+}
+
+model Players {
+  id       String @id
   userTgId String @unique
   role     String @default("")
+
+  game   Game?   @relation(fields: [gameId], references: [id])
+  gameId String?
 }
 
 enum Status {
