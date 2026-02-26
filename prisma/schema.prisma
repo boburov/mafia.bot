@@ -15,6 +15,12 @@ model User {
   role    String @default("")
 }
 
+model Chanel {
+  id String @id @default(uuid())
+  chat_name String
+  
+}
+
 model Game {
   id      String    @id @default(uuid())
   chatId  String
