@@ -22,22 +22,23 @@ model Chanel {
 }
 
 model Game {
-  id      String    @id @default(uuid())
+  id      String   @id @default(uuid())
   chatId  String
-  status  Status    @default(LOBBY)
-  phase   Phase     @default(DAY)
-  players Players[]
+  status  Status   @default(LOBBY)
+  phase   Phase    @default(DAY)
+  players Player[]
 }
 
-model Players {
-  id       String @id
-  userTgId String @unique
+model Player {
+  id       String @id @default(uuid())
+  userTgId String
   role     String @default("")
 
-  game   Game?   @relation(fields: [gameId], references: [id])
-  gameId String?
-}
+  game   Game   @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  gameId String
 
+  @@unique([userTgId, gameId])
+}
 enum Status {
   LOBBY
   RUNNING
