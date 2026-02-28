@@ -6,7 +6,6 @@ const ROLES = {
         name: "🤵🏻 Don",
         team: TEAMS.MAFIA,
         phase: PHASES.NIGHT,
-        minPlayer: 4,
         abilities: [{ type: ACTIONS.KILL }],
         leader: true,
     },
@@ -15,7 +14,6 @@ const ROLES = {
         name: "🤵🏼 Mafia",
         team: TEAMS.MAFIA,
         phase: PHASES.NIGHT,
-        minPlayer: 4,
         abilities: [{ type: ACTIONS.KILL }],
         inherits: "DON",
     },
@@ -24,7 +22,6 @@ const ROLES = {
         name: "🔪 Qotil",
         team: TEAMS.SOLO,
         phase: PHASES.NIGHT,
-        minPlayer: 8,
         abilities: [{ type: ACTIONS.KILL }],
     },
 
@@ -32,7 +29,6 @@ const ROLES = {
         name: "🕵🏻‍♂ Komissar",
         team: TEAMS.CIVIL,
         phase: PHASES.NIGHT,
-        minPlayer: 8,
         abilities: [{ type: ACTIONS.CHECK_ROLE }],
     },
 
@@ -40,7 +36,6 @@ const ROLES = {
         name: "👮🏻 Serjant",
         team: TEAMS.CIVIL,
         phase: PHASES.PASSIVE,
-        minPlayer: 4,
         inherits: "KOMISSAR",
     },
 
@@ -48,7 +43,6 @@ const ROLES = {
         name: "🧑🏻‍⚕ Doktor",
         team: TEAMS.CIVIL,
         phase: PHASES.NIGHT,
-        minPlayer: 4,
         abilities: [{ type: ACTIONS.SAVE }],
     },
 
@@ -56,14 +50,12 @@ const ROLES = {
         name: "🧑🏻 Tinch aholi",
         team: TEAMS.CIVIL,
         phase: PHASES.DAY,
-        minPlayer: 4,
     },
 
     MASHUQA: {
         name: "💃🏻 Ma'shuqa",
         team: TEAMS.NEUTRAL,
         phase: PHASES.NIGHT,
-        minPlayer: 4,
         abilities: [{ type: ACTIONS.BLOCK }],
     },
 
@@ -71,7 +63,6 @@ const ROLES = {
         name: "🤹🏻 Aferist",
         team: TEAMS.NEUTRAL,
         phase: PHASES.DAY,
-        minPlayer: 4,
         abilities: [{ type: ACTIONS.STEAL_VOTE }],
     },
 
@@ -79,7 +70,6 @@ const ROLES = {
         name: "🦇 Ayg'oqchi",
         team: TEAMS.MAFIA,
         phase: PHASES.NIGHT,
-        minPlayer: 4,
         abilities: [{ type: ACTIONS.CHECK_ROLE }],
     },
 
@@ -93,7 +83,6 @@ const ROLES = {
         name: "👨🏻‍💼 Advokat",
         team: TEAMS.MAFIA,
         phase: PHASES.NIGHT,
-        minPlayer: 4,
         abilities: [{ type: "PROTECT_FROM_CHECK" }],
     },
 
@@ -101,7 +90,6 @@ const ROLES = {
         name: "💣 Kamikaze",
         team: TEAMS.CIVIL,
         phase: PHASES.PASSIVE,
-        minPlayer: 4,
         abilities: [{ type: ACTIONS.REVENGE_KILL }],
     },
 
@@ -109,7 +97,6 @@ const ROLES = {
         name: "🧥 Parazit",
         team: TEAMS.SOLO,
         phase: PHASES.PASSIVE,
-        minPlayer: 4,
         abilities: [{ type: ACTIONS.TRANSFORM_ON_DEATH }],
     },
 
@@ -117,7 +104,6 @@ const ROLES = {
         name: "🧛 Qonxo'r",
         team: TEAMS.SOLO,
         phase: PHASES.NIGHT,
-        minPlayer: 4,
         abilities: [{ type: ACTIONS.KILL, cooldown: 2 }],
     },
 
@@ -125,7 +111,6 @@ const ROLES = {
         name: "🪞 Ko'zgu",
         team: TEAMS.SOLO,
         phase: PHASES.PASSIVE,
-        minPlayer: 4,
         abilities: [{ type: ACTIONS.REFLECT }],
     },
 
@@ -133,7 +118,6 @@ const ROLES = {
         name: "☠️ Qonli vasiyat",
         team: TEAMS.NEUTRAL,
         phase: PHASES.PASSIVE,
-        minPlayer: 4,
         abilities: [{ type: ACTIONS.REVENGE_KILL }],
     },
 
@@ -141,7 +125,6 @@ const ROLES = {
         name: "🎲 Tasodifchi",
         team: TEAMS.SOLO,
         phase: PHASES.NIGHT,
-        minPlayer: 4,
         abilities: [{ type: ACTIONS.RANDOM_ROLE }],
     },
 
@@ -149,7 +132,6 @@ const ROLES = {
         name: "🛡 Qo'riqchi",
         team: TEAMS.CIVIL,
         phase: PHASES.NIGHT,
-        minPlayer: 4,
         abilities: [{ type: ACTIONS.SAVE }],
     },
 
@@ -157,7 +139,6 @@ const ROLES = {
         name: "🧑🏻‍⚖ Sudya",
         team: TEAMS.CIVIL,
         phase: PHASES.DAY,
-        minPlayer: 4,
         abilities: [{ type: ACTIONS.CANCEL_LYNCH, maxUses: 1 }],
     },
 
@@ -165,7 +146,6 @@ const ROLES = {
         name: "🧝🏻‍♂ Elf",
         team: TEAMS.CIVIL,
         phase: PHASES.NIGHT,
-        minPlayer: 4,
         abilities: [{ type: ACTIONS.KILL, onlyAgainst: ["MAFIA", "SOLO"] }],
     },
 
@@ -173,7 +153,6 @@ const ROLES = {
         name: "🧬 Klon",
         team: TEAMS.SOLO,
         phase: PHASES.NIGHT,
-        minPlayer: 4,
         abilities: [{ type: ACTIONS.COPY_ROLE }],
     },
 
@@ -181,7 +160,6 @@ const ROLES = {
         name: "🧷 Bog'lovchi",
         team: TEAMS.MAFIA,
         phase: PHASES.NIGHT,
-        minPlayer: 4,
         abilities: [{ type: ACTIONS.LINK_PLAYERS }],
     },
 
@@ -189,7 +167,6 @@ const ROLES = {
         name: "🗂 Nusxachi",
         team: TEAMS.NEUTRAL,
         phase: PHASES.NIGHT,
-        minPlayer: 4,
         abilities: [{ type: ACTIONS.COPY_ROLE, maxUses: 1 }],
     },
 
@@ -197,7 +174,6 @@ const ROLES = {
         name: "🏃🏻 Sayohatchi",
         team: TEAMS.SOLO,
         phase: PHASES.NIGHT,
-        minPlayer: 4,
         abilities: [{ type: ACTIONS.TAKE_ROLE_ONE_NIGHT }],
     },
 
@@ -205,7 +181,6 @@ const ROLES = {
         name: "🎖 Janob",
         team: TEAMS.CIVIL,
         phase: PHASES.DAY,
-        minPlayer: 4,
         abilities: [{ type: ACTIONS.DOUBLE_VOTE }],
     },
 
@@ -213,7 +188,6 @@ const ROLES = {
         name: "📿 Ruhoniy",
         team: TEAMS.CIVIL,
         phase: PHASES.NIGHT,
-        minPlayer: 4,
         abilities: [{ type: "CHECK_KILLER", cooldown: 2 }],
     },
 };

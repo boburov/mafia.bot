@@ -16,9 +16,8 @@ model User {
 }
 
 model Chanel {
-  id String @id @default(uuid())
+  id        String @id @default(uuid())
   chat_name String
-  
 }
 
 model Game {
@@ -39,6 +38,7 @@ model Player {
 
   @@unique([userTgId, gameId])
 }
+
 enum Status {
   LOBBY
   RUNNING
