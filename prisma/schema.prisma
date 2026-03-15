@@ -7,37 +7,168 @@ datasource db {
   provider = "postgresql"
 }
 
+
+// ─── User ─────────────────────────────────────────────────────────────────────
+
 model User {
-  id      String @id @default(uuid())
-  user_id String @unique
-  money   Int    @default(0)
-  diamond Int    @default(0)
-  role    String @default("")
+  id        String   @id @default(uuid())
+  user_id   String   @unique
+  name      String   @default("")
+  money     Int      @default(0)
+  diamond   Int      @default(0)
+  lang      Lang     @default(uz)
+
+  gamesPlayed    Int       @default(0)
+  gamesWon       Int       @default(0)
+  kills          Int       @default(0)
+  deaths         Int       @default(0)
+  dailyStreak    Int       @default(0)
+  lastDailyBonus DateTime?
+
+  equipment   Equipment[]
+  gamePlayers Player[]    @relation("UserPlayers")
+  dailyBonus  DailyBonus?
+  coinLogs    CoinLog[]
 }
 
-model Chanel {
-  id        String @id @default(uuid())
-  chat_name String
+// ─── Equipment ────────────────────────────────────────────────────────────────
+
+model Equipment {
+  id         String  @id @default(uuid())
+  userId     String
+  roleKey    String
+  skinName   String
+  skinEmoji  String  @default("")
+  equipped   Boolean @default(false)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, roleKey, skinName])
 }
+
+// ─── Shop Item ────────────────────────────────────────────────────────────────
+
+model ShopItem {
+  id           String  @id @default(uuid())
+  roleKey      String
+  skinName     String
+  skinEmoji    String  @default("")
+  price        Int
+  diamondPrice Int     @default(0)
+  description  String  @default("")
+  active       Boolean @default(true)
+}
+
+// ─── Game ─────────────────────────────────────────────────────────────────────
 
 model Game {
-  id      String   @id @default(uuid())
-  chatId  String
-  status  Status   @default(LOBBY)
-  phase   Phase    @default(DAY)
-  players Player[]
+  id           String        @id @default(uuid())
+  chatId       String
+  status       Status        @default(LOBBY)
+  phase        Phase         @default(DAY)
+  round        Int           @default(1)
+  lang         Lang          @default(uz)
+  createdAt    DateTime      @default(now())
+  finishedAt   DateTime?
+  winner       String?
+
+  players      Player[]
+  nightActions NightAction[]
+  votes        Vote[]
 }
 
-model Player {
-  id       String @id @default(uuid())
-  userTgId String
-  role     String @default("")
+// ─── Player ───────────────────────────────────────────────────────────────────
 
-  game   Game   @relation(fields: [gameId], references: [id], onDelete: Cascade)
-  gameId String
+model Player {
+  id            String  @id @default(uuid())
+  userTgId      String
+  name          String  @default("")
+  role          String  @default("")
+  isAlive       Boolean @default(true)
+  isRevealed    Boolean @default(false)
+  skinName      String  @default("")
+
+  game          Game    @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  gameId        String
+  user          User?   @relation("UserPlayers", fields: [userTgId], references: [user_id])
+
+  actedActions  NightAction[] @relation("ActorActions")
+  targetActions NightAction[] @relation("TargetActions")
+  votesGiven    Vote[]        @relation("VoterVotes")
+  votesReceived Vote[]        @relation("TargetVotes")
 
   @@unique([userTgId, gameId])
 }
+
+// ─── Night Action ─────────────────────────────────────────────────────────────
+
+model NightAction {
+  id       String  @id @default(uuid())
+  gameId   String
+  round    Int     @default(1)
+  action   String
+  resolved Boolean @default(false)
+  blocked  Boolean @default(false)
+  actorId  String
+  targetId String
+
+  game   Game   @relation(fields: [gameId],  references: [id], onDelete: Cascade)
+  actor  Player @relation("ActorActions",  fields: [actorId],  references: [id], onDelete: Cascade)
+  target Player @relation("TargetActions", fields: [targetId], references: [id], onDelete: Cascade)
+
+  @@unique([actorId, round])
+}
+
+// ─── Vote ─────────────────────────────────────────────────────────────────────
+
+model Vote {
+  id       String @id @default(uuid())
+  gameId   String
+  round    Int
+  voterId  String
+  targetId String
+
+  game   Game   @relation(fields: [gameId],   references: [id], onDelete: Cascade)
+  voter  Player @relation("VoterVotes",  fields: [voterId],  references: [id], onDelete: Cascade)
+  target Player @relation("TargetVotes", fields: [targetId], references: [id], onDelete: Cascade)
+
+  @@unique([voterId, round])
+}
+
+// ─── Daily Bonus ─────────────────────────────────────────────────────────────
+
+model DailyBonus {
+  id            String   @id @default(uuid())
+  userId        String   @unique
+  lastClaimed   DateTime
+  streak        Int      @default(1)   // consecutive days claimed
+  totalClaimed  Int      @default(0)   // lifetime total claims
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// ─── Transaction log ──────────────────────────────────────────────────────────
+
+model CoinLog {
+  id        String   @id @default(uuid())
+  userId    String
+  amount    Int                          // positive = earn, negative = spend
+  reason    String                       // "daily_bonus", "game_win", "kill", etc.
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// ─── Group Settings ──────────────────────────────────────────────────────────
+
+model GroupSettings {
+  id          String @id @default(uuid())
+  chatId      String @unique   // Telegram group/channel ID
+  defaultLang Lang   @default(uz)
+  updatedAt   DateTime @updatedAt
+}
+
+// ─── Enums ────────────────────────────────────────────────name────────────────
 
 enum Status {
   LOBBY
