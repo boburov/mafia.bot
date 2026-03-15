@@ -4,11 +4,12 @@ const { Markup } = require("telegraf");
 
 function create(bot) {
     bot.command("create", async (ctx) => {
-        if (!(await isAdmin(ctx))) {
-            return ctx.reply("sorry son you're not admin");
+        const chatId = String(ctx.chat.id);
+        // !(await isAdmin(ctx))
+        if (!chatId.startsWith("-100")) {
+            return ctx.reply("Faqat Kanalda Oynash Mumkun");
         }
 
-        const chatId = String(ctx.chat.id);
 
         // Find latest non-finished game (active game)
         const game = await prisma.game.findFirst({
@@ -56,35 +57,35 @@ function create(bot) {
         );
     });
 
-   bot.action(/join_game_(.+)/, async (ctx) => {
-    const gameId = ctx.match[1];
-    const userTgId = String(ctx.from.id);
+    bot.action(/join_game_(.+)/, async (ctx) => {
+        const gameId = ctx.match[1];
+        const userTgId = String(ctx.from.id);
 
-    const ok = await isExist(ctx);
-    if (!ok) {
-        await ctx.answerCbQuery("Avval botga start bering ❗", { show_alert: true });
-        return;
-    }
+        const ok = await isExist(ctx);
+        if (!ok) {
+            await ctx.answerCbQuery("Avval botga start bering ❗", { show_alert: true });
+            return;
+        }
 
-    const game = await prisma.game.findUnique({ where: { id: gameId } });
+        const game = await prisma.game.findUnique({ where: { id: gameId } });
 
-    if (!game)
-        return ctx.answerCbQuery("O'yin topilmadi ❌", { show_alert: true });
+        if (!game)
+            return ctx.answerCbQuery("O'yin topilmadi ❌", { show_alert: true });
 
-    if (game.status !== "LOBBY")
-        return ctx.answerCbQuery("O'yin boshlangan ❌", { show_alert: true });
+        if (game.status !== "LOBBY")
+            return ctx.answerCbQuery("O'yin boshlangan ❌", { show_alert: true });
 
-    try {
-        await prisma.player.create({
-            data: { userTgId, gameId },
-        });
+        try {
+            await prisma.player.create({
+                data: { userTgId, gameId },
+            });
 
-        await ctx.answerCbQuery("Qo'shildingiz ✅");
-        await ctx.reply(`✅ ${ctx.from.first_name} o'yinga qo'shildi!`);
-    } catch (e) {
-        await ctx.answerCbQuery("Siz allaqachon qo'shilgansiz 🙂", { show_alert: true });
-    }
-});
+            await ctx.answerCbQuery("Qo'shildingiz ✅");
+            await ctx.reply(`✅ ${ctx.from.first_name} o'yinga qo'shildi!`);
+        } catch (e) {
+            await ctx.answerCbQuery("Siz allaqachon qo'shilgansiz 🙂", { show_alert: true });
+        }
+    });
 }
 
 module.exports = create;

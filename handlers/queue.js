@@ -10,7 +10,7 @@ async function cancelGameJobs(gameId) {
     const jobs = await gameQueue.getJobs([state], 0, 2000, true);
     for (const job of jobs) {
       if (job?.data?.gameId === gameId) {
-        try { await job.remove(); } catch {}
+        try { await job.remove(); } catch (err) { console.log(err); }
       }
     }
   }

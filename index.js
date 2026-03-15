@@ -1,7 +1,7 @@
 require("dotenv").config();
 const { Telegraf } = require("telegraf");
 const bot = new Telegraf(process.env.BOT_TOKEN);
-
+require("./workers/game.workers");
 const bot_runner = require("./bot");
 const { connectDB, prisma, } = require("./config/db");
 const ROLES = require("./core/game/roles/roles");
@@ -42,6 +42,6 @@ async function boot() {
 
 boot();
 
-// Graceful stop (nodemon/pm2 uchun foydali)
 process.once("SIGINT", () => bot.stop("SIGINT"));
 process.once("SIGTERM", () => bot.stop("SIGTERM"));
+module.exports = bot

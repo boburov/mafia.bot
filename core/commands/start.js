@@ -2,14 +2,13 @@ const { Markup } = require("telegraf");
 const isAdmin = require("../../lib/admin.verifcation");
 const { prisma } = require("../../config/db");
 const isExist = require("../../lib/user.verfication");
-
+const { gameQueue } = require("../../handlers/queue");
 const MIN_PLAYERS_TO_START = 4;
 
 module.exports = function start(bot) {
     bot.command("start", async (ctx) => {
         const chatId = String(ctx.chat.id);
 
-        // ✅ DM (private)
         if (!chatId.startsWith("-100")) {
             await prisma.user.upsert({
                 where: { user_id: String(ctx.from.id) },
@@ -36,7 +35,7 @@ module.exports = function start(bot) {
 
         if (!game) {
             return ctx.reply(
-                "O'yin mavjud emas.\n/create buyrug'ini yuboring",
+                "🛑 O'yin mavjud emas.\n/create buyrug'ini yuboring",
                 Markup.inlineKeyboard([
                     [Markup.button.url("🤖 Botga O'tish", "https://t.me/AuthenticMafiaBot?start=true")],
                 ])
@@ -48,17 +47,14 @@ module.exports = function start(bot) {
         // ✅ If admin pressed /start: auto-start when enough players
         if (admin) {
             if (game.status === "LOBBY") {
-                if (game._count.players >= MIN_PLAYERS_TO_START) {
-                    await prisma.game.update({
-                        where: { id: game.id },
-                        data: { status: "RUNNING" }, // or "STARTED"
-                    });
-
-                    return ctx.reply(`🎮 O'yin boshlandi! ✅\nO'yinchilar: ${game._count.players}`);
-                }
+                // workerga job qo'yish
+                await gameQueue.add("startDay", {
+                    gameId: game.id,
+                    chatId: ctx.chat.id
+                }, { delay: 300 });
 
                 return ctx.reply(
-                    `O'yin tayyor ✅\nHozircha o'yinchilar: ${game._count.players}/${MIN_PLAYERS_TO_START}\nQo'shilish uchun bosing:`,
+                    "O'yin tayyor ✅\nQo'shilish uchun bosing:",
                     Markup.inlineKeyboard([
                         [Markup.button.callback("➕ Qo'shilish", `join_game_${game.id}`)],
                     ])
@@ -71,6 +67,10 @@ module.exports = function start(bot) {
 
         // ✅ If normal user pressed /start:
         if (game.status === "LOBBY") {
+            await gameQueue.add("startNight", {
+                gameId: game.id,
+                chatId: ctx.chat.id
+            }, { delay: 300 });
             return ctx.reply(
                 "O'yin tayyor ✅\nQo'shilish uchun bosing:",
                 Markup.inlineKeyboard([
