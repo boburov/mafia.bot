@@ -16,6 +16,7 @@ const ACTIONS     = require("../core/game/roles/actions");
 const { PHASES, TEAMS }  = require("../core/game/roles/teams");
 const crypto      = require("crypto");
 const { t, getLangByGameId, getLangByUserId } = require("../core/i18n");
+const { addSpectator, broadcastToSpectators } = require("./spectator");
 
 // Accept both sender.js { sendMessage } and Telegraf bot { telegram.sendMessage }
 function getSend(telegramOrBot) {
@@ -445,7 +446,10 @@ async function resolveNight(gameId, round, telegramOrBot, chatId) {
             data:  { deaths: { increment: 1 } },
         }).catch(() => {});
 
-        results.push(`💀 Tunda bir kishi hayotdan ko'z yumdi.`);
+        const roleDef2 = ROLES[player.role];
+        results.push(`💀 *${player.name || player.userTgId}* — ${roleDef2?.name ?? player.role}`);
+        // Add to spectators
+        await addSpectator(gameId, player, tg).catch(() => {});
 
         // KAMIKAZE: kills their attacker on death
         if (player.role === "KAMIKAZE") {

@@ -1,41 +1,34 @@
 /**
  * workers/game.workers.js
  *
- * BullMQ worker — processes game phase jobs.
- *
- * ✅ NO new Telegraf()
- * ✅ NO bot.launch()
- * ✅ NO polling
- *
- * Uses handlers/sender.js — raw HTTP calls to Telegram API.
- * Callbacks (night_, vote_) are handled in main process (handlers/callbacks.js).
+ * ✅ NO new Telegraf() — NO bot.launch() — NO polling
+ * Uses handlers/sender.js for all Telegram API calls.
  */
 
 require("dotenv").config();
-const { Worker }   = require("bullmq");
+const { Worker }     = require("bullmq");
 const { connection } = require("../handlers/redis");
-const path = require("path");
+const path           = require("path");
 
-// ✅ Pure HTTP sender — never causes 409
-const { telegram } = require("../handlers/sender");
+const { telegram }   = require("../handlers/sender");
 
 const {
-    startGame,
-    transitionToDay,
-    transitionToNight,
-    transitionToVoting,
-    checkWinCondition,
-    endGame,
+    startGame, transitionToDay, transitionToNight,
+    transitionToVoting, checkWinCondition, endGame,
 } = require("../core/game/engine");
 
-const { sendNightDMs, resolveNight } = require("../handlers/night.actions");
-const { sendVotingKeyboard, tallyVotes, handleRevote, applyAferist } = require("../handlers/voting");
-const { sendRoleDMs } = require("../core/commands/start");
+const { sendNightDMs, resolveNight }                          = require("../handlers/night.actions");
+const { sendVotingKeyboard, tallyVotes, handleRevote,
+        applyAferist }                                        = require("../handlers/voting");
+const { sendRoleDMs }                                         = require("../core/commands/start");
+const { startMafiaRelay, stopMafiaRelay, cleanupMafiaRelay }  = require("../handlers/mafia.chat");
+const { broadcastToSpectators, revealToSpectators,
+        cleanupSpectators }                                   = require("../handlers/spectator");
+
 const ROLES  = require("../core/game/roles/roles");
 const { t, getLangByGameId } = require("../core/i18n");
 const { prisma } = require("../config/db");
 
-// Assets
 const nightImg  = path.join(__dirname, "../assets/night.jpg");
 const dayImg    = path.join(__dirname, "../assets/day.jpg");
 const votingImg = path.join(__dirname, "../assets/voting.jpg");
@@ -61,14 +54,18 @@ async function handleWinCheck(gameId, chatId) {
     const alive = t(lang, "alive_icon");
     const dead  = t(lang, "dead_icon");
     const rows  = players
-        .map(p => `${p.isAlive ? alive : dead} ${p.name || p.userTgId} — ${ROLES[p.role]?.name ?? p.role}`)
+        .map(p => `${p.isAlive ? alive : dead} *${p.name || p.userTgId}* — ${ROLES[p.role]?.name ?? p.role}`)
         .join("\n");
 
-    await telegram.sendMessage(
-        chatId,
-        `📊 *${t(lang, "game_summary").split("\n")[0]}*\n\n${rows}`,
-        { parse_mode: "Markdown" }
-    );
+    const summary = `📊 *${t(lang, "game_summary").split("\n")[0]}*\n\n${rows}`;
+    await telegram.sendMessage(chatId, summary, { parse_mode: "Markdown" });
+
+    // Reveal to spectators
+    await revealToSpectators(gameId, players, winMsg, telegram);
+
+    // Cleanup
+    cleanupMafiaRelay(gameId);
+    cleanupSpectators(gameId);
 
     return true;
 }
@@ -87,7 +84,6 @@ const worker = new Worker("game", async (job) => {
             include: { _count: { select: { players: true } } },
         });
         if (!game || game.status !== "LOBBY") return;
-
         if (game._count.players < 4) {
             await prisma.game.update({ where: { id: gameId }, data: { status: "FINISHED" } });
             await telegram.sendMessage(chatId, t(lang, "game_ended_early"));
@@ -100,12 +96,11 @@ const worker = new Worker("game", async (job) => {
         try {
             const assignments = await startGame(gameId, chatId);
 
-            // Group announcement
             const startedLine = {
-                uz:  "Rollar shaxsiy xabarda yuborildi. Tekshiring! 📩",
-                ru:  "Роли отправлены в личные сообщения. Проверьте! 📩",
-                eng: "Roles sent via private message. Check your DMs! 📩",
-            }[lang] ?? "Roles sent via DM 📩";
+                uz:  "Rollar shaxsiy xabarda yuborildi 📩",
+                ru:  "Роли отправлены в личные сообщения 📩",
+                eng: "Roles sent via private message 📩",
+            }[lang];
 
             await telegram.sendMessage(
                 chatId,
@@ -113,7 +108,7 @@ const worker = new Worker("game", async (job) => {
                 { parse_mode: "Markdown" }
             );
 
-            // DM each player their role card in their own language
+            // DM each player their role card in their personal language
             await sendRoleDMs(assignments, telegram);
 
         } catch (err) {
@@ -131,10 +126,20 @@ const worker = new Worker("game", async (job) => {
             { parse_mode: "Markdown" }
         );
 
-        // DM action keyboards to all night-role players
+        // Broadcast to spectators too
+        await broadcastToSpectators(
+            gameId,
+            t(lang, "night_started", { number: round }),
+            telegram
+        );
+
+        // Start mafia team relay
+        await startMafiaRelay(gameId, telegram);
+
+        // DM night action keyboards
         await sendNightDMs(gameId, round, telegram);
 
-        // 40s fallback timer
+        // 40s fallback
         const { gameQueue } = require("../handlers/queue");
         await gameQueue.add("resolveNight", { gameId, chatId, round }, { delay: 40_000 });
         return;
@@ -146,12 +151,14 @@ const worker = new Worker("game", async (job) => {
         const total   = await prisma.nightAction.count({ where: { gameId, round } });
 
         if (total > 0 && pending === 0) {
-            // Already resolved by early-path in callbacks.js
+            // Already resolved by early-path
+            stopMafiaRelay(gameId);
             const over = await handleWinCheck(gameId, chatId);
             if (!over) await transitionToDay(gameId, chatId, round);
             return;
         }
 
+        stopMafiaRelay(gameId);
         await resolveNight(gameId, round, telegram, chatId);
         const over = await handleWinCheck(gameId, chatId);
         if (!over) await transitionToDay(gameId, chatId, round);
@@ -169,6 +176,12 @@ const worker = new Worker("game", async (job) => {
             { parse_mode: "Markdown" }
         );
 
+        await broadcastToSpectators(
+            gameId,
+            t(lang, "day_started", { number: round, seconds: 60 }),
+            telegram
+        );
+
         await transitionToVoting(gameId, chatId, round);
         return;
     }
@@ -182,13 +195,15 @@ const worker = new Worker("game", async (job) => {
         );
 
         await sendVotingKeyboard(gameId, round, telegram, chatId);
+
+        // SUDYA button — only if SUDYA is alive and hasn't used ability
+        await sendSudyaButton(gameId, round, telegram, chatId, lang);
         return;
     }
 
     // ── resolveVoting ─────────────────────────────────────────────────────────
     if (job.name === "resolveVoting") {
         await applyAferist(gameId, round);
-
         const { result, tiedIds } = await tallyVotes(gameId, round, telegram, chatId);
 
         if (result === "SUID_WIN") return;
@@ -207,8 +222,47 @@ const worker = new Worker("game", async (job) => {
 
 }, { connection });
 
+// ─── SUDYA button ─────────────────────────────────────────────────────────────
+
+async function sendSudyaButton(gameId, round, telegram, chatId, lang) {
+    const sudya = await prisma.player.findFirst({
+        where: { gameId, role: "SUDYA", isAlive: true },
+    });
+    if (!sudya) return;
+
+    // Check if already used (maxUses: 1)
+    const used = await prisma.nightAction.count({
+        where: { gameId, actorId: sudya.id, action: "CANCEL_LYNCH" },
+    });
+    if (used > 0) return;
+
+    const label = {
+        uz:  "⚖️ Lynchni bekor qilish (1 marta)",
+        ru:  "⚖️ Отменить линч (1 раз)",
+        eng: "⚖️ Cancel lynch (1 time)",
+    }[lang] ?? "⚖️ Cancel lynch";
+
+    const { Markup } = require("telegraf");
+    try {
+        await telegram.sendMessage(
+            sudya.userTgId,
+            `⚖️ *Sudya* — ${label}\n\n` +
+            (lang === "uz" ? "Hozirgi ovoz berishni bekor qilishingiz mumkin." :
+             lang === "ru" ? "Вы можете отменить текущее голосование." :
+             "You can cancel the current vote."),
+            {
+                parse_mode:   "Markdown",
+                reply_markup: {
+                    inline_keyboard: [[
+                        { text: label, callback_data: `sudya_cancel_${gameId}_${round}` }
+                    ]]
+                }
+            }
+        );
+    } catch {}
+}
+
 worker.on("completed", (job) => console.log("✅ done:", job.name));
 worker.on("failed",    (job, err) => console.error("❌ failed:", job?.name, err.message));
-
 console.log("🎯 Game worker running...");
-// ✅ No bot.launch() — this file never touches Telegram polling
+// ✅ No bot.launch() here
